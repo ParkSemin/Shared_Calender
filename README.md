@@ -1,4 +1,4 @@
-# Shared_Calender
+# Shared_Calendar
 For 'Mobile Programming' in 2023.
 
 ### 팀 구성  
