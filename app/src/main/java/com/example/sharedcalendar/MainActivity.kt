@@ -2,7 +2,6 @@ package com.example.sharedcalendar
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sharedcalendar.CalendarUtil.Companion.selectedDate // import selectedDate
