@@ -1,7 +1,14 @@
 package com.example.sharedcalendar
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.MenuItem
+import android.view.View
+import android.widget.PopupMenu
+import android.widget.Toast
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.sharedcalendar.CalendarUtil.Companion.selectedDate // import selectedDate
@@ -9,16 +16,38 @@ import com.example.sharedcalendar.databinding.ActivityMainBinding
 import java.util.Calendar
 import java.util.Date
 import com.github.usingsky.calendar.KoreanLunarCalendar
+import com.google.android.material.navigation.NavigationView
 import java.text.SimpleDateFormat
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelectedListener{
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     lateinit var dayList: ArrayList<Date>
+    lateinit var drawerLayout: DrawerLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        // Toolbar 설정
+        val toolbar = binding.toolbar // toolBar를 통해 App Bar 생성
+        setSupportActionBar(toolbar) // 툴바 적용
+
+        supportActionBar?.setDisplayHomeAsUpEnabled(true) // 드로어를 꺼낼 홈 버튼 활성화
+        supportActionBar?.setHomeAsUpIndicator(R.drawable.baseline_density_medium_24) // 홈버튼 이미지 변경
+        supportActionBar?.setDisplayShowTitleEnabled(false) // 툴바에 타이틀 안보이게
+
+        // 네비게이션 드로어 생성
+        drawerLayout = findViewById(R.id.drawer_layout)
+
+        // FAB (Floating Action Button)를 찾아서 변수에 저장합니다.
+        val fab = binding.fab
+
+        // FAB 버튼에 클릭 리스너를 설정합니다.
+        fab.setOnClickListener { view ->
+            // 버튼을 클릭하면 showPopupMenu 함수를 호출합니다.
+            showPopupMenu(view)
+        }
 
         // 초기화
         selectedDate = Calendar.getInstance()
@@ -150,4 +179,44 @@ class MainActivity : AppCompatActivity() {
 
         return dayList
     }
+    // 팝업 메뉴를 표시하는 함수
+    private fun showPopupMenu(view: View) {
+        // PopupMenu 객체를 생성합니다.
+        val popup = PopupMenu(this, view)
+        // 팝업 메뉴의 아이템을 정의한 XML 파일을 로드합니다.
+        popup.menuInflater.inflate(R.menu.popup_menu, popup.menu)
+        popup.setOnMenuItemClickListener {
+            when (it.itemId) {
+                R.id.search_schedule -> {
+                    Toast.makeText(this, "Item clicked", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
+        }
+        // 팝업 메뉴를 표시합니다.
+        popup.show()
+    }
+    // 툴바 메뉴 버튼이 클릭 됐을 때 실행하는 함수
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // 클릭한 툴바 메뉴 아이템 id 마다 다르게 실행하도록 설정
+        when(item.itemId){
+            android.R.id.home->{
+                // 햄버거 버튼 클릭시 네비게이션 드로어 열기
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
+        }
+        return super.onOptionsItemSelected(item)
+
+    }
+    // 드로어 내 아이템 클릭 이벤트 처리하는 함수
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when(item.itemId){
+            R.id.menu_item1-> Toast.makeText(this,"menu_item1 실행",Toast.LENGTH_SHORT).show()
+            R.id.menu_item2-> Toast.makeText(this,"menu_item2 실행",Toast.LENGTH_SHORT).show()
+            R.id.menu_item3-> Toast.makeText(this,"menu_item3 실행",Toast.LENGTH_SHORT).show()
+        }
+        return false
+    }
+
 }
