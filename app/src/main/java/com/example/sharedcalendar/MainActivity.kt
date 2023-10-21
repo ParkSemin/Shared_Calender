@@ -1,6 +1,7 @@
 package com.example.sharedcalendar
 
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
@@ -23,11 +24,18 @@ import java.text.SimpleDateFormat
 class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelectedListener{
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     lateinit var dayList: ArrayList<Date>
-    lateinit var drawerLayout: DrawerLayout
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var navigationView: NavigationView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        // 초기화
+        selectedDate = Calendar.getInstance()
+
+        val username = intent.getStringExtra("username") //유저이름 가져오기
 
         // Toolbar 설정
         val toolbar = binding.toolbar // toolBar를 통해 App Bar 생성
@@ -40,6 +48,10 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         // 네비게이션 드로어 생성
         drawerLayout = findViewById(R.id.drawer_layout)
 
+        // 네비게이션 드로어 내에있는 화면의 이벤트를 처리하기 위해 생성
+        navigationView = findViewById(R.id.nav_view)
+        navigationView.setNavigationItemSelectedListener(this) //navigation 리스너
+
         // FAB (Floating Action Button)를 찾아서 변수에 저장합니다.
         val fab = binding.fab
 
@@ -48,9 +60,6 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             // 버튼을 클릭하면 showPopupMenu 함수를 호출합니다.
             showPopupMenu(view)
         }
-
-        // 초기화
-        selectedDate = Calendar.getInstance()
 
         // 화면 설정
         setMonthView(true)
@@ -188,7 +197,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         popup.setOnMenuItemClickListener {
             when (it.itemId) {
                 R.id.search_schedule -> {
-                    Toast.makeText(this, "Item clicked", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Item clicked", Toast.LENGTH_SHORT).show()
                     true
                 }
                 else -> false
@@ -197,6 +206,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         // 팝업 메뉴를 표시합니다.
         popup.show()
     }
+
     // 툴바 메뉴 버튼이 클릭 됐을 때 실행하는 함수
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // 클릭한 툴바 메뉴 아이템 id 마다 다르게 실행하도록 설정
@@ -207,16 +217,36 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             }
         }
         return super.onOptionsItemSelected(item)
-
     }
+
     // 드로어 내 아이템 클릭 이벤트 처리하는 함수
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when(item.itemId){
-            R.id.menu_item1-> Toast.makeText(this,"menu_item1 실행",Toast.LENGTH_SHORT).show()
-            R.id.menu_item2-> Toast.makeText(this,"menu_item2 실행",Toast.LENGTH_SHORT).show()
-            R.id.menu_item3-> Toast.makeText(this,"menu_item3 실행",Toast.LENGTH_SHORT).show()
+            R.id.menu_item1-> {
+                // 첫 번째 아이템을 클릭했을 때의 동작
+                val intent = Intent(this@MainActivity, LoggedInActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            R.id.menu_item2-> {
+                logout()
+                true
+            }
+            R.id.menu_item3-> Toast.makeText(this@MainActivity,"menu_item3 실행",Toast.LENGTH_SHORT).show()
         }
         return false
+    }
+    private fun logout() {
+        // 사용자 정보 및 세션 정보 삭제
+        sharedPreferences.edit().apply {
+            remove("isLoggedIn")
+            // 필요하다면 추가적인 사용자 정보도 삭제
+        }.apply()
+
+        // 로그인 화면으로 이동 (예: LoginActivity)
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
 }
