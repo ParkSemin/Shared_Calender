@@ -4,26 +4,43 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="#F5F5F5"> <!-- 배경색을 조금 연한 회색으로 설정 -->
 
+    <!-- Logged In Info -->
     <TextView
         android:id="@+id/textViewLoggedInInfo"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Logged In As:"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
 
+    <!-- Name -->
     <TextView
         android:id="@+id/textViewName"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Name: John Doe"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"/>
 
+    <!-- Email -->
     <TextView
         android:id="@+id/textViewEmail"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Email: john.doe@example.com"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"/>
 
+    <!-- Date of Birth -->
     <TextView
         android:id="@+id/textViewDOB"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="DOB: January 1, 1990"
+        android:textSize="16sp"/>
 
 </LinearLayout>

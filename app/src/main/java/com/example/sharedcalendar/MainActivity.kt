@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
 import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -51,6 +52,11 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         // 네비게이션 드로어 내에있는 화면의 이벤트를 처리하기 위해 생성
         navigationView = findViewById(R.id.nav_view)
         navigationView.setNavigationItemSelectedListener(this) //navigation 리스너
+
+        // 네비게이션 뷰의 헤더를 가져와서 그 안의 TextView에 접근
+        val headerView = navigationView.getHeaderView(0)
+        val textView: TextView = headerView.findViewById(R.id.text)
+        textView.text = username ?: "Select Item" // 만약 username이 null이면 "Select Item"을 기본값으로 사용
 
         // FAB (Floating Action Button)를 찾아서 변수에 저장합니다.
         val fab = binding.fab

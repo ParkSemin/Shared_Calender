@@ -11,46 +11,46 @@
         android:id="@+id/editTextSignUpUsername"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Username" />
+        android:hint="아이디" />
 
     <EditText
         android:id="@+id/editTextSignUpPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Password"
+        android:hint="비밀번호"
         android:inputType="textPassword" />
 
     <EditText
         android:id="@+id/editTextSignUpConfirmPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Confirm Password"
+        android:hint="비밀번호 확인"
         android:inputType="textPassword" />
 
     <EditText
         android:id="@+id/editTextRealName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Real Name" />
+        android:hint="실제 이름" />
 
     <EditText
         android:id="@+id/editTextEmail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email"
+        android:hint="이메일"
         android:inputType="textEmailAddress" />
 
     <EditText
         android:id="@+id/editTextDOB"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Date of Birth (YYYY-MM-DD)"
+        android:hint="생년월일 (YYYYMMDD)"
         android:inputType="date" />
 
     <Button
         android:id="@+id/buttonCompleteSignUp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sign Up" />
+        android:text="회원가입" />
 
 </LinearLayout>

@@ -6,4 +6,17 @@
     </style>
 
     <style name="Theme.CustomCalenderPractice" parent="Base.Theme.CustomCalenderPractice" />
+
+    <style name="Theme.CustomCalenderPractice.Fullscreen" parent="Theme.CustomCalenderPractice">
+        <item name="android:actionBarStyle">
+            @style/Widget.Theme.CustomCalenderPractice.ActionBar.Fullscreen
+        </item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:windowBackground">@null</item>
+    </style>
+
+    <style name="ThemeOverlay.Shared_Calendar.FullscreenContainer" parent="">
+        <item name="fullscreenBackgroundColor">@color/light_blue_600</item>
+        <item name="fullscreenTextColor">@color/light_blue_A200</item>
+    </style>
 </resources>

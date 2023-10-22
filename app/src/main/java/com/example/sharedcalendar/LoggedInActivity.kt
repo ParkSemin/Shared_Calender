@@ -29,9 +29,9 @@ class LoggedInActivity : AppCompatActivity() {
         val email = prefs.getString(KEY_EMAIL, null)
         val dob = prefs.getString(KEY_DOB, null)
 
-        textViewLoggedInInfo.text = "Logged in as: $username"
-        textViewName.text = "Name: $realName"
-        textViewEmail.text = "Email: $email"
-        textViewDOB.text = "Date of Birth: $dob"
+        textViewLoggedInInfo.text = "로그인된 아이디: $username"
+        textViewName.text = "이름: $realName"
+        textViewEmail.text = "이메일: $email"
+        textViewDOB.text = "생년월일: $dob"
     }
 }
