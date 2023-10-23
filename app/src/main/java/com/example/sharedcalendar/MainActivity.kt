@@ -3,6 +3,7 @@ package com.example.sharedcalendar
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.PopupMenu
@@ -17,6 +18,7 @@ import java.util.Calendar
 import java.util.Date
 import com.github.usingsky.calendar.KoreanLunarCalendar
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.FirebaseApp
 import java.text.SimpleDateFormat
 
 
@@ -28,6 +30,9 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        // Firebase Realtime Database 초기화
+        FirebaseApp.initializeApp(this)
 
         // Toolbar 설정
         val toolbar = binding.toolbar // toolBar를 통해 App Bar 생성
@@ -51,6 +56,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
 
         // 초기화
         selectedDate = Calendar.getInstance()
+        Log.d("selectedDate", "$selectedDate")
 
         // 화면 설정
         setMonthView(true)
@@ -102,13 +108,14 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
 
         // 하단의 선택된 날짜에 대한 정보를 보여주는 뷰의 기준 날짜 및 내용 변경
         val dayOfWeekOfSelectedDate: String = when (selectedDate[Calendar.DAY_OF_WEEK]) {
-            1 -> "일"
-            2 -> "월"
-            3 -> "화"
-            4 -> "수"
-            5 -> "목"
-            6 -> "금"
-            else -> "토"
+            Calendar.SUNDAY -> "일"
+            Calendar.MONDAY -> "월"
+            Calendar.TUESDAY -> "화"
+            Calendar.WEDNESDAY -> "수"
+            Calendar.THURSDAY -> "목"
+            Calendar.FRIDAY -> "금"
+            Calendar.SATURDAY -> "토"
+            else -> ""
         }
         binding.selectedDayTextView.text = "${selectedDate[Calendar.DAY_OF_MONTH]}. ${dayOfWeekOfSelectedDate}"
 
@@ -187,6 +194,15 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         popup.menuInflater.inflate(R.menu.popup_menu, popup.menu)
         popup.setOnMenuItemClickListener {
             when (it.itemId) {
+                R.id.add_event -> {
+                    val intent = Intent(this, AddEventActivity::class.java)
+                    intent.putExtra("selectedDate", selectedDate) // selectedDate를 "selectedDate"라는 키로 넘겨줌
+                    startActivity(intent)
+                    true
+                }
+                R.id.add_timetable -> {
+                    false
+                }
                 R.id.search_schedule -> {
                     Toast.makeText(this, "Item clicked", Toast.LENGTH_SHORT).show()
                     true
