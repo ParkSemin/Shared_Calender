@@ -230,7 +230,9 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         when(item.itemId){
             R.id.menu_item1-> {
                 // 첫 번째 아이템을 클릭했을 때의 동작
+                val username = intent.getStringExtra("username") //유저이름 가져오기
                 val intent = Intent(this@MainActivity, LoggedInActivity::class.java)
+                intent.putExtra("username", username)
                 startActivity(intent)
                 true
             }

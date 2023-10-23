@@ -61,7 +61,7 @@
         <View
             android:layout_width="43dp"
             android:layout_height="48dp"
-            android:background="@drawable/baseline_person_24" />
+            android:background="@drawable/baseline_lock_open_24" />
 
         <EditText
             android:id="@+id/editTextPassword"
