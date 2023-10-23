@@ -96,6 +96,12 @@
         android:backgroundTint="#ffffff"
         android:text="회원가입" />
 
-
+    <Button
+        android:id="@+id/buttonFindPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#000000"
+        android:backgroundTint="#ffffff"
+        android:text="비밀번호 재설정" />
 
 </LinearLayout>

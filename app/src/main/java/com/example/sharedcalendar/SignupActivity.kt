@@ -10,13 +10,13 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 class SignupActivity : AppCompatActivity() {
 
-    // 뷰바인딩 객체 선언
+    // 뷰바인딩 객체를 위한 선언. 레이아웃의 UI 요소에 접근할 수 있습니다.
     private lateinit var binding: ActivitySignupBinding
 
-    // Firebase Authentication 인스턴스 선언
+    // Firebase 인증을 위한 객체 선언
     private lateinit var auth: FirebaseAuth
 
-    // 사용자 정보를 저장하기 위한 키값 정의
+    // Firestore에 사용자 정보를 저장할 때 사용될 키값들을 정의합니다.
     private val KEY_REAL_NAME = "real_name"
     private val KEY_EMAIL = "email"
     private val KEY_DOB = "dob"
@@ -24,29 +24,29 @@ class SignupActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Firebase Authentication 초기화
+        // Firebase 인증 객체 초기화
         auth = FirebaseAuth.getInstance()
 
-        // 뷰바인딩 초기화 및 레이아웃 설정
+        // 뷰바인딩을 이용하여 레이아웃과 연결합니다.
         binding = ActivitySignupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // '회원가입 완료' 버튼 클릭 리스너 설정
+        // '회원가입 완료' 버튼에 클릭 리스너를 설정합니다.
         binding.buttonCompleteSignUp.setOnClickListener {
-            // 입력 필드에서 데이터 가져오기
+            // 사용자 입력값을 변수에 저장합니다.
             val email = binding.editTextEmail.text.toString()
             val password = binding.editTextSignUpPassword.text.toString()
             val confirmPassword = binding.editTextSignUpConfirmPassword.text.toString()
             val realName = binding.editTextRealName.text.toString()
             val dob = binding.editTextDOB.text.toString()
 
-            // 비밀번호와 비밀번호 확인이 일치하는지 검사
+            // 입력된 비밀번호와 비밀번호 확인이 일치하는지 검사합니다.
             if (password == confirmPassword) {
-                // Firebase Authentication을 사용하여 사용자 등록
+                // Firebase Authentication을 사용해 사용자 계정을 생성합니다.
                 auth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this) { task ->
                         if (task.isSuccessful) {
-                            // Firestore에 추가적인 사용자 정보 저장
+                            // Firestore에 사용자 정보를 저장합니다.
                             val userMap = hashMapOf(
                                 KEY_REAL_NAME to realName,
                                 KEY_EMAIL to email,
@@ -56,20 +56,29 @@ class SignupActivity : AppCompatActivity() {
                             val db = FirebaseFirestore.getInstance()
                             db.collection("users").document(email).set(userMap)
                                 .addOnSuccessListener {
-                                    Toast.makeText(this@SignupActivity, "Signed up successfully!", Toast.LENGTH_SHORT).show()
-                                    val intent = Intent(this@SignupActivity, LoginActivity::class.java)
-                                    startActivity(intent)
-                                    finish()
+                                    // 사용자 정보 저장에 성공하면 인증 메일을 전송합니다.
+                                    val user = auth.currentUser
+                                    user?.sendEmailVerification()
+                                        ?.addOnCompleteListener { emailTask ->
+                                            if (emailTask.isSuccessful) {
+                                                Toast.makeText(this@SignupActivity, "회원가입 성공! 이메일 인증을 해주세요. $email.", Toast.LENGTH_SHORT).show()
+                                                val intent = Intent(this@SignupActivity, LoginActivity::class.java)
+                                                startActivity(intent)
+                                                finish()
+                                            } else {
+                                                Toast.makeText(this@SignupActivity, "이메일이 존제하지 않습니다.", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
                                 }
                                 .addOnFailureListener {
-                                    Toast.makeText(this@SignupActivity, "Failed to save user info. Try again!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@SignupActivity, "회원정보가 저장되지 않았습니다. 다시 시도하세요!", Toast.LENGTH_SHORT).show()
                                 }
                         } else {
-                            Toast.makeText(this@SignupActivity, "Failed to sign up. Try again!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@SignupActivity, "회원가입의 실패했습니다. 다시 시도하세요!", Toast.LENGTH_SHORT).show()
                         }
                     }
             } else {
-                Toast.makeText(this@SignupActivity, "Passwords do not match!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SignupActivity, "비밀번호가 같지 않습니다!", Toast.LENGTH_SHORT).show()
             }
         }
     }

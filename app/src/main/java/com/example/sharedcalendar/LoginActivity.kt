@@ -34,13 +34,20 @@ class LoginActivity : AppCompatActivity() {
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        // 로그인 성공
-                        val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                        intent.putExtra("username", email) // Sending email as "username" for consistency.
-                        startActivity(intent)
+                        // 로그인 성공 후 이메일 인증 상태 확인
+                        val user = auth.currentUser
+                        if (user?.isEmailVerified == true) {
+                            // 이메일 인증 성공 시
+                            val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                            intent.putExtra("username", email)
+                            startActivity(intent)
+                        } else {
+                            // 이메일 인증 미완료
+                            Toast.makeText(this@LoginActivity, "이메일 인증을 해주세요.", Toast.LENGTH_SHORT).show()
+                        }
                     } else {
                         // 로그인 실패
-                        Toast.makeText(this@LoginActivity, "Authentication failed.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@LoginActivity, "비밀번호나 이메일이 맞지 않습니다.", Toast.LENGTH_SHORT).show()
                     }
                 }
         }
@@ -48,6 +55,12 @@ class LoginActivity : AppCompatActivity() {
         binding.buttonSignUp.setOnClickListener {
             // 회원 가입 페이지로 이동
             val intent = Intent(this@LoginActivity, SignupActivity::class.java)
+            startActivity(intent)
+        }
+
+        binding.buttonFindPassword.setOnClickListener {
+            // 비밀번호 재설정 페이지로 이동
+            val intent = Intent(this@LoginActivity, ResetPasswordActivity::class.java)
             startActivity(intent)
         }
     }
