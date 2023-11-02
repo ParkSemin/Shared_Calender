@@ -7,7 +7,10 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.GridLayoutManager
@@ -20,19 +23,37 @@ import com.github.usingsky.calendar.KoreanLunarCalendar
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.FirebaseApp
 import java.text.SimpleDateFormat
+import kotlin.system.exitProcess
 
 
 class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelectedListener{
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
     lateinit var dayList: ArrayList<Date>
-    lateinit var drawerLayout: DrawerLayout
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navigationView: NavigationView
+
+    // 뒤로가기 버튼을 누르면 앱이 종료되기 위해 버튼을 누른 시간을 저장
+    private var backPressedTime: Long = 0
+    val callback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (System.currentTimeMillis() - backPressedTime >= 2000) {
+                backPressedTime = System.currentTimeMillis()
+                Toast.makeText(applicationContext, "한번 더 누르면 앱을 종료합니다.", Toast.LENGTH_SHORT).show()
+            } else {
+                finishAffinity()
+                System.runFinalization()
+                exitProcess(0)
+            }
+            backPressedTime = System.currentTimeMillis()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-        // Firebase Realtime Database 초기화
-        FirebaseApp.initializeApp(this)
+        // 뒤로가기 콜백 추가
+        this.onBackPressedDispatcher.addCallback(this, callback)
 
         // Toolbar 설정
         val toolbar = binding.toolbar // toolBar를 통해 App Bar 생성
@@ -43,7 +64,16 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         supportActionBar?.setDisplayShowTitleEnabled(false) // 툴바에 타이틀 안보이게
 
         // 네비게이션 드로어 생성
-        drawerLayout = findViewById(R.id.drawer_layout)
+        drawerLayout = binding.drawerLayout
+
+        // 네비게이션 드로어 내에있는 화면의 이벤트를 처리하기 위해 생성
+        navigationView = binding.navView
+        navigationView.setNavigationItemSelectedListener(this) //navigation 리스너
+
+        // 네비게이션 뷰의 헤더를 가져와서 그 안의 TextView에 접근
+        val headerView = navigationView.getHeaderView(0)
+        val textView: TextView = headerView.findViewById(R.id.text)
+        textView.text = "메뉴"
 
         // FAB (Floating Action Button)를 찾아서 변수에 저장합니다.
         val fab = binding.fab
@@ -56,7 +86,6 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
 
         // 초기화
         selectedDate = Calendar.getInstance()
-        Log.d("selectedDate", "$selectedDate")
 
         // 화면 설정
         setMonthView(true)
@@ -153,8 +182,8 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
 
     // 날짜 타입 설정
     private fun monthYearFromDate(calendar: Calendar) : String {
-        var year = calendar.get(Calendar.YEAR)
-        var month = calendar.get(Calendar.MONTH) + 1
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH) + 1
 
         val formattedMonth = if (month < 10) "0$month" else "$month"
 
@@ -163,8 +192,8 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
 
     // 날짜 생성
     private fun dayInMonthArray() : ArrayList<Date> {
-        var dayList = ArrayList<Date>()
-        var monthCalendar = selectedDate.clone() as Calendar
+        val dayList = ArrayList<Date>()
+        val monthCalendar = selectedDate.clone() as Calendar
 
         // 1일로 설정
         monthCalendar[Calendar.DAY_OF_MONTH] = 1
@@ -228,9 +257,21 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     // 드로어 내 아이템 클릭 이벤트 처리하는 함수
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when(item.itemId){
-            R.id.menu_item1-> Toast.makeText(this,"menu_item1 실행",Toast.LENGTH_SHORT).show()
-            R.id.menu_item2-> Toast.makeText(this,"menu_item2 실행",Toast.LENGTH_SHORT).show()
-            R.id.menu_item3-> Toast.makeText(this,"menu_item3 실행",Toast.LENGTH_SHORT).show()
+            R.id.menu_item1-> {
+                Toast.makeText(baseContext, "menu_item1 실행", Toast.LENGTH_SHORT).show()
+                true
+            }
+            R.id.menu_item2-> {
+                MySharedPreferences.clearUser(this)
+                MyApplication.auth.signOut()
+                val intent: Intent = Intent(this, LoginActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            R.id.menu_item3-> {
+                Toast.makeText(baseContext, "menu_item3 실행", Toast.LENGTH_SHORT).show()
+                true
+            }
         }
         return false
     }
