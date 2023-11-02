@@ -28,6 +28,7 @@
         <activity android:name=".SignupActivity"
             android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".AddEventActivity" />
+        <activity android:name=".ResetPwActivity"/>
     </application>
 
 </manifest>

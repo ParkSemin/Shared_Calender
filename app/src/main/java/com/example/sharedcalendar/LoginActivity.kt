@@ -117,7 +117,8 @@ class LoginActivity : AppCompatActivity() {
         }
         // 비밀번호 찾기 리스너
         binding.btnFindPw.setOnClickListener {
-            Toast.makeText(baseContext, "비밀번호 찾기 클릭됨", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, ResetPwActivity::class.java)
+            startActivity(intent)
         }
         // 회원가입 리스너
         binding.btnSignUp.setOnClickListener {
