@@ -145,9 +145,6 @@ class SignupActivity : AppCompatActivity() {
                         )
                         var intent = Intent(this, LoginActivity::class.java)
                         startActivity(intent)
-                        // 데이터베이스에 사용자 정보 저장
-                        val name = binding.inputName.text.toString()
-                        saveUserInformation(email, name)
                     } else {
                         MotionToast.darkColorToast(
                             this,
@@ -177,26 +174,7 @@ class SignupActivity : AppCompatActivity() {
     fun checkPassword() : Boolean {
         return binding.inputPw.text.toString() == binding.inputPwCheck.text.toString()
     }
-    // 회원가입 정보를 데이터베이스에 저장
-    private fun saveUserInformation(email: String, name: String) {
-        val database = FirebaseDatabase.getInstance()
-        val ref = database.getReference("Users")
 
-        val userId = ref.push().key  // 고유한 ID 생성
-        val user = User(email, name)  // User 클래스를 만들어서 사용하거나, Map으로 데이터 관리
-
-        userId?.let {
-            ref.child(it).setValue(user).addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Log.d("SignupActivity", "사용자 정보가 성공적으로 저장되었습니다.")
-                } else {
-                    Log.d("SignupActivity", "사용자 정보 저장에 실패했습니다.")
-                }
-            }
-        }
-    }
-
-    data class User(val email: String, val name: String)  // 사용자 데이터 클래스
 }
 
 
