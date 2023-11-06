@@ -298,14 +298,13 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                                 MotionToast.LONG_DURATION,
                                 ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
                             )
+                            val intent: Intent = Intent(this, LoginActivity::class.java)
+                            startActivity(intent)
                         })
                     .setNegativeButton("취소", null)
                 builder.show()
 
-                val intent: Intent = Intent(this, LoginActivity::class.java)
-                startActivity(intent)
-
-                true
+                return true
             }
         }
         return false
