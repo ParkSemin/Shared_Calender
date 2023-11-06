@@ -15,13 +15,21 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.example.sharedcalendar.databinding.ActivityLoginBinding
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.database
 import www.sanju.motiontoast.MotionToast
 import www.sanju.motiontoast.MotionToastStyle
 import kotlin.system.exitProcess
 
 class LoginActivity : AppCompatActivity() {
     private val binding by lazy { ActivityLoginBinding.inflate(layoutInflater) }
+    private var database: DatabaseReference = Firebase.database.reference
+    private var myRef = database.database.getReference("users")
 
     // 로그인 버튼 활성화 여부 확인을 위한 boolean 변수 2개
     private var id_ok: Boolean = false
@@ -93,15 +101,23 @@ class LoginActivity : AppCompatActivity() {
                             MySharedPreferences.setUserId(this, email)
                             MySharedPreferences.setUserPass(this, password)
                         }
-
                         MyApplication.email = email
-                        var intent = Intent(this, MainActivity::class.java)
-                        startActivity(intent)
+                        MyApplication.email_revised = email.replace(".", "@")
+
+                        myRef.child(MyApplication.email_revised.toString()).get().addOnSuccessListener {
+                            val dataMap = it.value as Map<String, String>
+                            val name = dataMap["name"]
+                            Log.d("SEMIN_name", "$name")
+                            MyApplication.name = name
+
+                            var intent = Intent(this, MainActivity::class.java)
+                            startActivity(intent)
+                        }
                     } else {
                         MotionToast.darkColorToast(
                             this,
                             "로그인 실패",
-                            "아이디와 비밀번호를 확인하세요",
+                            "아이디 또는 비밀번호를 확인하세요",
                             MotionToastStyle.ERROR,
                             MotionToast.GRAVITY_BOTTOM,
                             MotionToast.LONG_DURATION,

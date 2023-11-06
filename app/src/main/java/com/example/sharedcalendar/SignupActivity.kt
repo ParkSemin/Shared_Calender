@@ -14,11 +14,17 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import com.example.sharedcalendar.databinding.ActivitySignupBinding
+import com.google.firebase.Firebase
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.database
 import www.sanju.motiontoast.MotionToast
 import www.sanju.motiontoast.MotionToastStyle
 
 class SignupActivity : AppCompatActivity() {
     private val binding by lazy { ActivitySignupBinding.inflate(layoutInflater) }
+
+    private var database: DatabaseReference = Firebase.database.reference
+    private val myRef = database.database.getReference("users")
 
     // 이메일 인증 버튼 활성화 여부 확인을 위한 boolean 변수
     private var name_ok: Boolean = false
@@ -50,7 +56,7 @@ class SignupActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                id_ok = s?.length!! > 6
+                id_ok = s?.length!! > 6 && '@' in s
                 changeVerifyButtonActivation()
             }
         })
@@ -129,6 +135,7 @@ class SignupActivity : AppCompatActivity() {
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
 
+            val name: String = binding.inputName.text.toString()
             val email: String = binding.inputId.text.toString()
             val password: String = binding.inputPw.text.toString()
             MyApplication.auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
@@ -146,6 +153,10 @@ class SignupActivity : AppCompatActivity() {
                                 www.sanju.motiontoast.R.font.helvetica_regular
                             )
                         )
+                        // RealtimeDatabase에 회원 정보 추가
+                        myRef.child(email.replace(".", "@")).child("name").setValue(name)
+
+                        // 로그인 액티비티로 다시 돌아감
                         var intent = Intent(this, LoginActivity::class.java)
                         startActivity(intent)
                     } else {

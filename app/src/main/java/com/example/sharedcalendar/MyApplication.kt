@@ -10,6 +10,8 @@ class MyApplication : MultiDexApplication() {
     companion object {
         lateinit var auth: FirebaseAuth
         var email: String? = null
+        var email_revised: String? = null
+        var name: String? = null
 
         fun checkAuth(): Boolean {
             Log.d("currentUser", "${auth.currentUser?.email}")

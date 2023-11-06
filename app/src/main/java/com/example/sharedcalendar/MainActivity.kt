@@ -1,5 +1,6 @@
 package com.example.sharedcalendar
 
+import android.content.DialogInterface
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -10,7 +11,9 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.GridLayoutManager
@@ -21,13 +24,22 @@ import java.util.Calendar
 import java.util.Date
 import com.github.usingsky.calendar.KoreanLunarCalendar
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.database
+import www.sanju.motiontoast.MotionToast
+import www.sanju.motiontoast.MotionToastStyle
 import java.text.SimpleDateFormat
 import kotlin.system.exitProcess
 
 
 class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelectedListener{
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
+
+    private var database: DatabaseReference = Firebase.database.reference
+    private val myRef = database.database.getReference("users")
+
     lateinit var dayList: ArrayList<Date>
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
@@ -72,8 +84,11 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
 
         // 네비게이션 뷰의 헤더를 가져와서 그 안의 TextView에 접근
         val headerView = navigationView.getHeaderView(0)
-        val textView: TextView = headerView.findViewById(R.id.text)
-        textView.text = "메뉴"
+        val tv_name: TextView = headerView.findViewById(R.id.tv_name)
+        val tv_email: TextView = headerView.findViewById(R.id.tv_email)
+        tv_name.text = MyApplication.name
+        Log.d("SEMIN_NAME", "${MyApplication.name}")
+        tv_email.text = MyApplication.email
 
         // FAB (Floating Action Button)를 찾아서 변수에 저장합니다.
         val fab = binding.fab
@@ -257,19 +272,39 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     // 드로어 내 아이템 클릭 이벤트 처리하는 함수
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when(item.itemId){
-            R.id.menu_item1-> {
-                Toast.makeText(baseContext, "menu_item1 실행", Toast.LENGTH_SHORT).show()
-                true
-            }
-            R.id.menu_item2-> {
+            R.id.menu_logout-> {
                 MySharedPreferences.clearUser(this)
                 MyApplication.auth.signOut()
                 val intent: Intent = Intent(this, LoginActivity::class.java)
                 startActivity(intent)
                 true
             }
-            R.id.menu_item3-> {
-                Toast.makeText(baseContext, "menu_item3 실행", Toast.LENGTH_SHORT).show()
+            R.id.menu_delete-> {
+                MySharedPreferences.clearUser(this)
+
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle("경고")
+                    .setMessage("정말 탈퇴하시겠습니까?")
+                    .setPositiveButton("확인",
+                        DialogInterface.OnClickListener { dialog, which ->
+                            myRef.child(MyApplication.email_revised.toString()).removeValue()
+                            MyApplication.auth.currentUser?.delete()
+                            MotionToast.darkColorToast(
+                                this,
+                                "탈퇴 완료",
+                                "회원 탈퇴가 성공적으로 처리되었습니다",
+                                MotionToastStyle.SUCCESS,
+                                MotionToast.GRAVITY_BOTTOM,
+                                MotionToast.LONG_DURATION,
+                                ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
+                            )
+                        })
+                    .setNegativeButton("취소", null)
+                builder.show()
+
+                val intent: Intent = Intent(this, LoginActivity::class.java)
+                startActivity(intent)
+
                 true
             }
         }
