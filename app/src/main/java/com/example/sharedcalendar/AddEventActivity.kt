@@ -2,6 +2,7 @@ package com.example.sharedcalendar
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -9,11 +10,21 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.res.ResourcesCompat
 import com.example.sharedcalendar.databinding.ActivityAddEventBinding
+import com.google.firebase.Firebase
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.database
+import org.jetbrains.annotations.Async.Schedule
+import www.sanju.motiontoast.MotionToast
+import www.sanju.motiontoast.MotionToastStyle
 import java.util.Calendar
 
 class AddEventActivity : AppCompatActivity() {
     private val binding by lazy { ActivityAddEventBinding.inflate(layoutInflater) }
+
+    private var database: DatabaseReference = Firebase.database.reference
+    private var myRef = database.database.getReference("schedules").child(MyApplication.email_revised.toString())
 
     // MainActivity로부터 넘겨 받은 년, 월, 일, 요일 정보 저장할 year, month, day, dayOfWeekString 멤버 변수 선언
     private var year = 0
@@ -26,20 +37,20 @@ class AddEventActivity : AppCompatActivity() {
     private var minute = 0
 
     // 시작 일과 종료 일을 클래스의 멤버 변수로 선언
-    private var start_year = 0
-    private var start_month = 0
-    private var start_day = 0
-    private var start_dayOfWeekString = ""
-    private var end_year = 0
-    private var end_month = 0
-    private var end_day = 0
-    private var end_dayOfWeekString = ""
+    private var startYear = 0
+    private var startMonth = 0
+    private var startDay = 0
+    private var startDayOfWeekString = ""
+    private var endYear = 0
+    private var endMonth = 0
+    private var endDay = 0
+    private var endDayOfWeekString = ""
 
     // 시작 시간과 종료 시간 또한 멤버 변수로 선언
-    private var start_hour = 0
-    private var start_minute = 0
-    private var end_hour = 0
-    private var end_minute = 0
+    private var startHour = 0
+    private var startMinute = 0
+    private var endHour = 0
+    private var endMinute = 0
 
     @Override
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,14 +80,14 @@ class AddEventActivity : AppCompatActivity() {
         }
 
         // 추출한 year, month, day를 멤버 변수로 초기화
-        start_year = year
-        start_month = month
-        start_day = day
-        start_dayOfWeekString = dayOfWeekString
-        end_year = year
-        end_month = month
-        end_day = day
-        end_dayOfWeekString = dayOfWeekString
+        startYear = year
+        startMonth = month
+        startDay = day
+        startDayOfWeekString = dayOfWeekString
+        endYear = year
+        endMonth = month
+        endDay = day
+        endDayOfWeekString = dayOfWeekString
 
         // 등록하려는 일정의 날짜가 오늘이라면 현재 시간으로 시작 시간 및 종료 시간 설정
         val calendar = Calendar.getInstance()
@@ -88,35 +99,35 @@ class AddEventActivity : AppCompatActivity() {
             minute = 0
         }
         // hour, minute의 초깃값으로 시작 시간, 종료 시간 설정
-        start_hour = hour
-        start_minute = minute
-        end_hour = hour+1
-        end_minute = minute
+        startHour = hour
+        startMinute = minute
+        endHour = hour+1
+        endMinute = minute
         updateTimeButtonText()
 
         // year, month, day를 startDateButton, endDateButton의 text로 설정
-        binding.startDateButton.text = "${start_month + 1}월 ${start_day}일 (${dayOfWeekString})"
-        binding.endDateButton.text = "${end_month + 1}월 ${end_day}일 (${dayOfWeekString})"
+        binding.startDateButton.text = String.format("%s월 %s일 (%s)", startMonth + 1, startDay, dayOfWeekString)
+        binding.endDateButton.text = String.format("%s월 %s일 (%s)", endMonth + 1, endDay, dayOfWeekString)
 
         // DatePickerDialog 설정
         binding.startDateButton.setOnClickListener {
             showDatePickerDialogForButton(
                 binding.startDateButton,
-                start_year,
-                start_month,
-                start_day
+                startYear,
+                startMonth,
+                startDay
             )
         }
         binding.endDateButton.setOnClickListener {
-            showDatePickerDialogForButton(binding.endDateButton, end_year, end_month, end_day)
+            showDatePickerDialogForButton(binding.endDateButton, endYear, endMonth, endDay)
         }
 
         // TimePickerDialog 설정
         binding.startTimeButton.setOnClickListener {
-            showTimePickerDialogForButton(binding.startTimeButton, start_hour, start_minute)
+            showTimePickerDialogForButton(binding.startTimeButton, startHour, startMinute)
         }
         binding.endTimeButton.setOnClickListener {
-            showTimePickerDialogForButton(binding.endTimeButton, end_hour, end_minute)
+            showTimePickerDialogForButton(binding.endTimeButton, endHour, endMinute)
         }
 
         // Toolbar 설정
@@ -160,44 +171,44 @@ class AddEventActivity : AppCompatActivity() {
 
             // 갱신된 년, 월, 일로 부터 멤버 변수를 갱신
             if (button == binding.startDateButton) {
-                start_year = selectedYear
-                start_month = selectedMonth
-                start_day = selectedDay
-                start_dayOfWeekString = dayOfWeekString
+                startYear = selectedYear
+                startMonth = selectedMonth
+                startDay = selectedDay
+                startDayOfWeekString = dayOfWeekString
 
                 // 갱신된 시작 일이 종료 일보다 더 미래인 경우, 종료 일 갱신
-                if (start_year > end_year) {
-                    end_year = start_year
-                    end_month = start_month
-                    end_day = start_day
-                    end_dayOfWeekString = start_dayOfWeekString
-                } else if (start_month > end_month) {
-                    end_month = start_month
-                    end_day = start_day
-                    end_dayOfWeekString = start_dayOfWeekString
-                } else if (start_day > end_day) {
-                    end_day = start_day
-                    end_dayOfWeekString = start_dayOfWeekString
+                if (startYear > endYear) {
+                    endYear = startYear
+                    endMonth = startMonth
+                    endDay = startDay
+                    endDayOfWeekString = startDayOfWeekString
+                } else if (startMonth > endMonth) {
+                    endMonth = startMonth
+                    endDay = startDay
+                    endDayOfWeekString = startDayOfWeekString
+                } else if (startDay > endDay) {
+                    endDay = startDay
+                    endDayOfWeekString = startDayOfWeekString
                 }
             } else if (button == binding.endDateButton) {
-                end_year = selectedYear
-                end_month = selectedMonth
-                end_day = selectedDay
-                end_dayOfWeekString = dayOfWeekString
+                endYear = selectedYear
+                endMonth = selectedMonth
+                endDay = selectedDay
+                endDayOfWeekString = dayOfWeekString
 
                 // 갱신된 종료 일이 시작 일보다 더 과거인 경우, 시작 일 갱신
-                if (start_year > end_year) {
-                    start_year = end_year
-                    start_month = end_month
-                    start_day = end_day
-                    start_dayOfWeekString = end_dayOfWeekString
-                } else if (start_month > end_month) {
-                    start_month = end_month
-                    start_day = end_day
-                    start_dayOfWeekString = end_dayOfWeekString
-                } else if (start_day > end_day) {
-                    start_day = end_day
-                    start_dayOfWeekString = end_dayOfWeekString
+                if (startYear > endYear) {
+                    startYear = endYear
+                    startMonth = endMonth
+                    startDay = endDay
+                    startDayOfWeekString = endDayOfWeekString
+                } else if (startMonth > endMonth) {
+                    startMonth = endMonth
+                    startDay = endDay
+                    startDayOfWeekString = endDayOfWeekString
+                } else if (startDay > endDay) {
+                    startDay = endDay
+                    startDayOfWeekString = endDayOfWeekString
                 }
             }
 
@@ -210,8 +221,8 @@ class AddEventActivity : AppCompatActivity() {
 
     // 날짜 선택 후 버튼의 텍스트도 갱신시키는 함수
     private fun updateDateButtonText() {
-        binding.startDateButton.text = "${start_month+1}월 ${start_day}일 (${start_dayOfWeekString})"
-        binding.endDateButton.text = "${end_month+1}월 ${end_day}일 (${end_dayOfWeekString})"
+        binding.startDateButton.text = String.format("%s월 %s일 (%s)", startMonth + 1, startDay, startDayOfWeekString)
+        binding.endDateButton.text = String.format("%s월 %s일 (%s)", endMonth + 1, endDay, endDayOfWeekString)
     }
 
     // 시간 선택 함수
@@ -223,22 +234,22 @@ class AddEventActivity : AppCompatActivity() {
 
             // 이벤트 발생 버튼에 따라 시작 시간 또는 종료 시간을 갱신
             if (button == binding.startTimeButton) {
-                start_hour = selectedHour
-                start_minute = selectedMinute
+                startHour = selectedHour
+                startMinute = selectedMinute
 
                 // 시작 시간이 종료 시간보다 크거나 같은 경우 -> 종료 시간 갱신
-                if (compareStartTimeWithEndTime() == false) {
-                    end_hour = start_hour+1
-                    end_minute = start_minute
+                if (!compareStartTimeWithEndTime()) {
+                    endHour = startHour+1
+                    endMinute = startMinute
                 }
             } else { // button == binding.endTimeButton
-                end_hour = selectedHour
-                end_minute = selectedMinute
+                endHour = selectedHour
+                endMinute = selectedMinute
 
                 // 시작 시간이 종료 시간보다 크거나 같은 경우 -> 시작 시간 갱신
-                if (compareStartTimeWithEndTime() == false) {
-                    start_hour = end_hour-1
-                    start_minute = end_minute
+                if (!compareStartTimeWithEndTime()) {
+                    startHour = endHour-1
+                    startMinute = endMinute
                 }
             }
 
@@ -252,18 +263,18 @@ class AddEventActivity : AppCompatActivity() {
     // 선택된 시간을 비교하여 시작 시간과 종료 시간을 변경하는 함수
     private fun compareStartTimeWithEndTime(): Boolean {
         val startCalendar = Calendar.getInstance()
-        startCalendar.set(Calendar.YEAR, start_year)
-        startCalendar.set(Calendar.MONTH, start_month)
-        startCalendar.set(Calendar.DAY_OF_MONTH, start_day)
-        startCalendar.set(Calendar.HOUR_OF_DAY, start_hour)
-        startCalendar.set(Calendar.MINUTE, start_minute)
+        startCalendar.set(Calendar.YEAR, startYear)
+        startCalendar.set(Calendar.MONTH, startMonth)
+        startCalendar.set(Calendar.DAY_OF_MONTH, startDay)
+        startCalendar.set(Calendar.HOUR_OF_DAY, startHour)
+        startCalendar.set(Calendar.MINUTE, startMinute)
 
         val endCalendar = Calendar.getInstance()
-        endCalendar.set(Calendar.YEAR, end_year)
-        endCalendar.set(Calendar.MONTH, end_month)
-        endCalendar.set(Calendar.DAY_OF_MONTH, end_day)
-        endCalendar.set(Calendar.HOUR_OF_DAY, end_hour)
-        endCalendar.set(Calendar.MINUTE, end_minute)
+        endCalendar.set(Calendar.YEAR, endYear)
+        endCalendar.set(Calendar.MONTH, endMonth)
+        endCalendar.set(Calendar.DAY_OF_MONTH, endDay)
+        endCalendar.set(Calendar.HOUR_OF_DAY, endHour)
+        endCalendar.set(Calendar.MINUTE, endMinute)
 
         // 시작 시간이 종료 시간보다 과거라면 true, 같거나 미래라면 false
         return startCalendar.before(endCalendar)
@@ -271,13 +282,13 @@ class AddEventActivity : AppCompatActivity() {
 
     // 시간 선택 후 버튼의 텍스트도 갱신시키는 함수
     private fun updateTimeButtonText() {
-        var isPM = start_hour >= 12 // 오후면 true, 오전이면 false
-        var hourToShow = if (start_hour % 12 == 0) 12 else start_hour % 12
-        binding.startTimeButton.text = String.format("%s %02d:%02d", if (isPM) "오후" else "오전", hourToShow, start_minute)
+        var isPM = startHour >= 12 // 오후면 true, 오전이면 false
+        var hourToShow = if (startHour % 12 == 0) 12 else startHour % 12
+        binding.startTimeButton.text = String.format("%s %02d:%02d", if (isPM) "오후" else "오전", hourToShow, startMinute)
 
-        isPM = end_hour >= 12 // 오후면 true, 오전이면 false
-        hourToShow = if (end_hour % 12 == 0) 12 else end_hour % 12
-        binding.endTimeButton.text = String.format("%s %02d:%02d", if (isPM) "오후" else "오전", hourToShow, end_minute)
+        isPM = endHour >= 12 // 오후면 true, 오전이면 false
+        hourToShow = if (endHour % 12 == 0) 12 else endHour % 12
+        binding.endTimeButton.text = String.format("%s %02d:%02d", if (isPM) "오후" else "오전", hourToShow, endMinute)
     }
 
     @Override
@@ -290,10 +301,54 @@ class AddEventActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.done_add_event -> {
-                // 체크 버튼을 클릭했을 때 실행할 동작 작성
+                if (binding.title.text.isBlank()) {
+                    MotionToast.darkColorToast(
+                        this,
+                        "일정 추가 실패",
+                        "일정명을 입력하세요",
+                        MotionToastStyle.ERROR,
+                        MotionToast.GRAVITY_BOTTOM,
+                        MotionToast.LONG_DURATION,
+                        ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
+                    )
+                } else {
+                    // DB에 추가할 데이터 한번에 정의
+                    val scheduleData = ScheduleData(
+                        "${binding.title.text}",
+                        "${startYear}-${startMonth+1}-${startDay}",
+                        "${startHour}:${startMinute}",
+                        "${endYear}-${endMonth+1}-${endDay}",
+                        "${endHour}:${endMinute}"
+                    )
+                    myRef.push().setValue(scheduleData)
+                        .addOnSuccessListener {
+                            MotionToast.darkColorToast(
+                                this,
+                                "일정 추가 완료",
+                                "일정이 성공적으로 추가되었습니다",
+                                MotionToastStyle.SUCCESS,
+                                MotionToast.GRAVITY_BOTTOM,
+                                MotionToast.LONG_DURATION,
+                                ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
+                            )
+                            val intent: Intent = Intent(this, MainActivity::class.java)
+                            startActivity(intent)
+                    }
+                        .addOnCanceledListener {
+                            MotionToast.darkColorToast(
+                                this,
+                                "일정 추가 실패",
+                                "다시 시도해주세요",
+                                MotionToastStyle.ERROR,
+                                MotionToast.GRAVITY_BOTTOM,
+                                MotionToast.LONG_DURATION,
+                                ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
+                            )
+                        }
+                }
                 true
             }
-            else -> super.onOptionsItemSelected(item)
+            else -> false
         }
     }
 }

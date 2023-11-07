@@ -23,9 +23,6 @@ class ResetPasswordActivity : AppCompatActivity() {
         // 비밀 번호 초기화 버튼 초기 비활성화
         binding.buttonResetPassword.isEnabled = false
 
-        // Firebase Authentication 초기화
-        MyApplication.auth = FirebaseAuth.getInstance()
-
         //이메일 필드
         binding.editTextResetEmail.addTextChangedListener(object: TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}

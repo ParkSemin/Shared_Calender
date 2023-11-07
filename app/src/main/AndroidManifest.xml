@@ -14,21 +14,30 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CustomCalenderPractice"
         tools:targetApi="31">
-        <activity android:name=".MainActivity" />
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="portrait"/>
         <!-- 초기 액티비티 == 로그인 액티비티 -->
         <activity
             android:name=".LoginActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SignupActivity"
+        <activity
+            android:name=".SignupActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize"/>
-        <activity android:name=".AddEventActivity" />
-        <activity android:name=".ResetPasswordActivity"/>
+        <activity
+            android:name=".AddEventActivity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".ResetPasswordActivity"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

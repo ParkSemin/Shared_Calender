@@ -32,12 +32,12 @@ class LoginActivity : AppCompatActivity() {
     private var myRef = database.database.getReference("users")
 
     // 로그인 버튼 활성화 여부 확인을 위한 boolean 변수 2개
-    private var id_ok: Boolean = false
-    private var pw_ok: Boolean = false
+    private var idOk: Boolean = false
+    private var pwOk: Boolean = false
 
     // 뒤로가기 버튼을 누르면 앱이 종료되기 위해 버튼을 누른 시간을 저장
     private var backPressedTime: Long = 0
-    val callback = object : OnBackPressedCallback(true) {
+    private val callback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             if (System.currentTimeMillis() - backPressedTime >= 2000) {
                 backPressedTime = System.currentTimeMillis()
@@ -61,13 +61,37 @@ class LoginActivity : AppCompatActivity() {
         MyApplication.auth = FirebaseAuth.getInstance()
         binding.btnLogin.isEnabled = false
 
+        // 자동 로그인 구현
+        if (!(MySharedPreferences.getUserId(this).isBlank() && MySharedPreferences.getUserPass(this).isBlank())) {
+            val email = MySharedPreferences.getUserId(this)
+            val password = MySharedPreferences.getUserPass(this)
+
+            MyApplication.email = email
+            MyApplication.email_revised = email.replace(".", "@")
+
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+
+            /*
+            MyApplication.auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        MyApplication.email = email
+                        MyApplication.email_revised = email.replace(".", "@")
+
+                        val intent = Intent(this, MainActivity::class.java)
+                        startActivity(intent)
+                    }
+                } */
+        }
+
         // 로그인 버튼 활성화를 위한 리스너
         binding.inputId.addTextChangedListener(object: TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun afterTextChanged(s: Editable?) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                id_ok = s?.length!! > 6
+                idOk = s?.length!! > 6
                 changeLoginButtonActivation()
             }
         })
@@ -76,16 +100,10 @@ class LoginActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                pw_ok = s?.length!! >= 6
+                pwOk = s?.length!! >= 6
                 changeLoginButtonActivation()
             }
         })
-
-        // 자동 로그인 구현
-        if (!(MySharedPreferences.getUserId(this).isNullOrBlank() && MySharedPreferences.getUserPass(this).isNullOrBlank())) {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-        }
 
         // 로그인 버튼 리스너
         binding.btnLogin.setOnClickListener {
@@ -96,7 +114,7 @@ class LoginActivity : AppCompatActivity() {
             val password: String = binding.inputPw.text.toString()
             MyApplication.auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
+                    if (task.isSuccessful && MyApplication.auth.currentUser!!.isEmailVerified) {
                         if (binding.checkAutoLogin.isChecked) {
                             MySharedPreferences.setUserId(this, email)
                             MySharedPreferences.setUserPass(this, password)
@@ -107,10 +125,9 @@ class LoginActivity : AppCompatActivity() {
                         myRef.child(MyApplication.email_revised.toString()).get().addOnSuccessListener {
                             val dataMap = it.value as Map<String, String>
                             val name = dataMap["name"]
-                            Log.d("SEMIN_name", "$name")
-                            MyApplication.name = name
+                            MySharedPreferences.setUserName(this, name)
 
-                            var intent = Intent(this, MainActivity::class.java)
+                            val intent = Intent(this, MainActivity::class.java)
                             startActivity(intent)
                         }
                     } else {
@@ -144,6 +161,6 @@ class LoginActivity : AppCompatActivity() {
     }
     // 로그인 버튼 활성화 상태 변경 메소드
     fun changeLoginButtonActivation() : Unit {
-        binding.btnLogin.isEnabled = id_ok == true && pw_ok == true
+        binding.btnLogin.isEnabled = idOk == true && pwOk == true
     }
 }
