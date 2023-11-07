@@ -96,6 +96,8 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         val tvEmail: TextView = headerView.findViewById(R.id.tv_email)
         tvName.text = MySharedPreferences.getUserName(this)
         tvEmail.text = MySharedPreferences.getUserId(this)
+        Log.d("parksemin", "${MySharedPreferences.getUserName(this)}, ${MySharedPreferences.getUserId(this)}")
+        Log.d("parksemin_currentuser", "${MyApplication.auth.currentUser}, ${MyApplication.auth.currentUser?.email}")
 
         // FAB (Floating Action Button)를 찾아서 변수에 저장합니다.
         val fab = binding.fab
@@ -328,6 +330,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                     .setPositiveButton("확인",
                         DialogInterface.OnClickListener { _, _ ->
                             myRef.child(MyApplication.email_revised.toString()).removeValue()
+                            myScheduleRef.removeValue()
                             MyApplication.auth.currentUser?.delete()
                             MotionToast.darkColorToast(
                                 this,
