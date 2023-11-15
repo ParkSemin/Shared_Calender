@@ -122,9 +122,11 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         val fab = binding.fab
 
         // FAB 버튼에 클릭 리스너를 설정합니다.
-        fab.setOnClickListener { view ->
-            // 버튼을 클릭하면 showPopupMenu 함수를 호출합니다.
-            showPopupMenu(view)
+        fab.setOnClickListener {
+            val intent = Intent(this, AddEventActivity::class.java)
+            intent.putExtra("selectedDate", selectedDate) // selectedDate를 "selectedDate"라는 키로 넘겨줌
+            startActivity(intent)
+            true
         }
 
         // AddEventActivity에서 일정 추가하고 다시 돌아오면 변경 사항을 반영해야 함
@@ -157,34 +159,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         })
     }
 
-    // 팝업 메뉴를 표시하는 함수
-    private fun showPopupMenu(view: View) {
-        // PopupMenu 객체를 생성합니다.
-        val popup = PopupMenu(this, view)
-        // 팝업 메뉴의 아이템을 정의한 XML 파일을 로드합니다.
-        popup.menuInflater.inflate(R.menu.popup_menu, popup.menu)
-        popup.setOnMenuItemClickListener {
-            when (it.itemId) {
-                R.id.add_event -> {
-                    val intent = Intent(this, AddEventActivity::class.java)
-                    intent.putExtra("selectedDate", selectedDate) // selectedDate를 "selectedDate"라는 키로 넘겨줌
-                    startActivity(intent)
-                    true
-                }
-                R.id.add_timetable -> {
-                    Toast.makeText(this, "Item clicked", Toast.LENGTH_SHORT).show()
-                    true
-                }
-                R.id.search_schedule -> {
-                    Toast.makeText(this, "Item clicked", Toast.LENGTH_SHORT).show()
-                    true
-                }
-                else -> false
-            }
-        }
-        // 팝업 메뉴를 표시합니다.
-        popup.show()
-    }
+    
 
     // 툴바 메뉴 버튼이 클릭 됐을 때 실행하는 함수
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
