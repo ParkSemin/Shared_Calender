@@ -11,15 +11,16 @@ import com.example.sharedcalendar.CalendarUtil.Companion.selectedDate
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class AdapterSchedule : RecyclerView.Adapter<AdapterSchedule.ScheduleView>() {
+class AdapterSchedule(val tempSchedule: MutableList<ScheduleData>) : RecyclerView.Adapter<AdapterSchedule.ScheduleView>() {
     interface OnItemClickListener {
         fun onItemClick(position: Int)
     }
     var itemClickListener: OnItemClickListener? = null
 
     inner class ScheduleView(val layout: View): RecyclerView.ViewHolder(layout) {
-        val textTitle = layout.findViewById<TextView>(R.id.textTitle)
-        val textDuration = layout.findViewById<TextView>(R.id.textDuration)
+        val item_schedule_layout = layout.findViewById<LinearLayout>(R.id.item_schedule_layout)
+        val item_schedule_title = layout.findViewById<TextView>(R.id.item_schedule_title)
+        val item_schedule_duration = layout.findViewById<TextView>(R.id.item_schedule_duration)
 
         init {
             itemView.setOnClickListener {
@@ -34,15 +35,18 @@ class AdapterSchedule : RecyclerView.Adapter<AdapterSchedule.ScheduleView>() {
     }
 
     override fun onBindViewHolder(holder: ScheduleView, position: Int) {
-        val day = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(selectedDate.time)
-        for (schedule in scheduleList) {
-            if (schedule.start_date == day || schedule.end_date == day) {
+        holder.item_schedule_title.text = tempSchedule[position].title
+        holder.item_schedule_duration.text = String.format("${tempSchedule[position].start_date} ~ ${tempSchedule[position].end_date}")
 
-            }
+
+        // 해당 일정 선택시 호출되는 리스너
+        holder.item_schedule_layout.setOnClickListener {
+            // 일정 정보 띄워주는 화면 표시하도록 구현할 것
         }
     }
 
     override fun getItemCount(): Int {
-        TODO("Not yet implemented")
+        // 선택 날짜의 일정 개수 반환
+        return tempSchedule.size
     }
 }

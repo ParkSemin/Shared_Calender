@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.sharedcalendar.CalendarUtil.Companion.scheduleList
 import com.example.sharedcalendar.CalendarUtil.Companion.selectedDate
 import com.example.sharedcalendar.CalendarUtil.Companion.today
 import com.example.sharedcalendar.databinding.ActivityMainBinding
@@ -44,23 +45,6 @@ class AdapterDay(val binding: ActivityMainBinding, val tempMonth: Int, val dayLi
     }
 
     override fun onBindViewHolder(holder: DayView, position: Int) {
-        // 날짜 선택 시 호출되는 리스너
-        holder.item_day_layout.setOnClickListener {
-            // 이전에 선택한 날짜의 배경 색상을 원래대로 돌리기
-            oldHolder?.item_day_text?.background = null
-
-            // 선택한 날짜가 오늘일 경우에는 배경 색상 변경 안함
-            if(dayList[position] != today.time) {
-                // 선택한 날짜의 배경 색상 변경
-                holder.item_day_text.setBackgroundResource(R.drawable.round_calendar_cell_selected)
-
-                oldHolder = holder
-            }
-
-            selectedDate.time = dayList[position]
-
-            changeSelectedDateView()
-        }
         holder.item_day_text.text = SimpleDateFormat("d", Locale.getDefault()).format(dayList[position])
 
         holder.item_day_text.setTextColor(when(position % 7) {
@@ -82,6 +66,25 @@ class AdapterDay(val binding: ActivityMainBinding, val tempMonth: Int, val dayLi
 
         if(tempMonth != SimpleDateFormat("MM", Locale.getDefault()).format(dayList[position]).toInt()-1) {
             holder.item_day_text.alpha = 0.4f
+        }
+
+
+        // 날짜 선택 시 호출되는 리스너
+        holder.item_day_layout.setOnClickListener {
+            // 이전에 선택한 날짜의 배경 색상을 원래대로 돌리기
+            oldHolder?.item_day_text?.background = null
+
+            // 선택한 날짜가 오늘일 경우에는 배경 색상 변경 안함
+            if(dayList[position] != today.time) {
+                // 선택한 날짜의 배경 색상 변경
+                holder.item_day_text.setBackgroundResource(R.drawable.round_calendar_cell_selected)
+
+                oldHolder = holder
+            }
+
+            selectedDate.time = dayList[position]
+
+            changeSelectedDateView()
         }
     }
 
@@ -118,6 +121,15 @@ class AdapterDay(val binding: ActivityMainBinding, val tempMonth: Int, val dayLi
 
 
         // 등록된 일정 보여주기
-        //binding.showDiaryView.adapter = AdapterSchedule()
+        val tempSchedule: MutableList<ScheduleData> = mutableListOf() // 임시 배열
+        val day = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(selectedDate.time)
+        for (schedule in scheduleList) {
+            // 일정의 시작일이나 종료일이 선택한 날짜와 같을 경우 해당 날짜의 일정을 임시 배열에 추가
+            if (schedule.start_date == day || schedule.end_date == day) {
+                tempSchedule.add(schedule)
+            }
+        }
+        // 선택한 날짜의 일정이 담긴 스케줄을 어댑터의 인수로 전달
+        binding.showDiaryView.adapter = AdapterSchedule(tempSchedule)
     }
 }

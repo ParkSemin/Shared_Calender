@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/item_schedule_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
@@ -19,7 +20,7 @@
         android:orientation="vertical" >
 
         <TextView
-            android:id="@+id/textTitle"
+            android:id="@+id/item_schedule_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Title 1"
@@ -32,7 +33,7 @@
             android:background="@color/cardview_dark_background"/>
 
         <TextView
-            android:id="@+id/textDuration"
+            android:id="@+id/item_schedule_duration"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Content 1"
