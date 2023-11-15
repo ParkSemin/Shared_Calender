@@ -1,0 +1,123 @@
+package com.example.sharedcalendar
+
+import android.graphics.Color
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.sharedcalendar.CalendarUtil.Companion.selectedDate
+import com.example.sharedcalendar.CalendarUtil.Companion.today
+import com.example.sharedcalendar.databinding.ActivityMainBinding
+import com.github.usingsky.calendar.KoreanLunarCalendar
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+class AdapterDay(val binding: ActivityMainBinding, val tempMonth: Int, val dayList: MutableList<Date>): RecyclerView.Adapter<AdapterDay.DayView>() {
+    // 이전에 선택된 날짜의 뷰를 저장하기 위한 임시 홀더
+    var oldHolder: DayView? = null
+
+    interface OnItemClickListener {
+        fun onItemClick(position: Int)
+    }
+    var itemClickListener: OnItemClickListener? = null
+
+    inner class DayView(val layout: View): RecyclerView.ViewHolder(layout) {
+        val item_day_layout = layout.findViewById<LinearLayout>(R.id.item_day_layout)
+        val item_day_text = layout.findViewById<TextView>(R.id.item_day_text)
+
+        init {
+            itemView.setOnClickListener {
+                itemClickListener?.onItemClick(adapterPosition)
+            }
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DayView {
+        var view = LayoutInflater.from(parent.context).inflate(R.layout.list_item_day, parent, false)
+        return DayView(view)
+    }
+
+    override fun onBindViewHolder(holder: DayView, position: Int) {
+        // 날짜 선택 시 호출되는 리스너
+        holder.item_day_layout.setOnClickListener {
+            // 이전에 선택한 날짜의 배경 색상을 원래대로 돌리기
+            oldHolder?.item_day_text?.background = null
+
+            // 선택한 날짜가 오늘일 경우에는 배경 색상 변경 안함
+            if(dayList[position] != today.time) {
+                // 선택한 날짜의 배경 색상 변경
+                holder.item_day_text.setBackgroundResource(R.drawable.round_calendar_cell_selected)
+
+                oldHolder = holder
+            }
+
+            selectedDate.time = dayList[position]
+
+            changeSelectedDateView()
+        }
+        holder.item_day_text.text = SimpleDateFormat("d", Locale.getDefault()).format(dayList[position])
+
+        holder.item_day_text.setTextColor(when(position % 7) {
+            0 -> Color.RED // 7로 나누어 떨어지면 일요일이므로 빨간색
+            6 -> Color.BLUE // 7로 나눈 나머지가 1이면 토요일이므로 파랑색
+            else -> Color.BLACK // 그 외는 평일이므로 검은색
+        })
+
+        // 선택된 날짜 배경 색상 설정
+        if(dayList[position] == selectedDate.time) {
+            holder.item_day_text.setBackgroundResource(R.drawable.round_calendar_cell_selected)
+        }
+
+        // 오늘 날짜 배경 색상 설정
+        if(dayList[position] == today.time) {
+            holder.item_day_text.setBackgroundResource(R.drawable.round_calendar_cell)
+            changeSelectedDateView()
+        }
+
+        if(tempMonth != SimpleDateFormat("MM", Locale.getDefault()).format(dayList[position]).toInt()-1) {
+            holder.item_day_text.alpha = 0.4f
+        }
+    }
+
+    override fun getItemCount(): Int {
+        return 6 * 7
+    }
+
+    fun changeSelectedDateView() {
+        // 하단의 선택된 날짜에 대한 정보를 보여주는 뷰의 기준 날짜 및 내용 변경
+        val dayOfWeekOfSelectedDate: String = when (selectedDate[Calendar.DAY_OF_WEEK]) {
+            Calendar.SUNDAY -> "일"
+            Calendar.MONDAY -> "월"
+            Calendar.TUESDAY -> "화"
+            Calendar.WEDNESDAY -> "수"
+            Calendar.THURSDAY -> "목"
+            Calendar.FRIDAY -> "금"
+            Calendar.SATURDAY -> "토"
+            else -> ""
+        }
+        binding.selectedDayTextView.text = String.format("%s. %s", selectedDate[Calendar.DAY_OF_MONTH], dayOfWeekOfSelectedDate)
+
+        // 음력 날짜 출력 위한 코드
+        val lunarCalendar = KoreanLunarCalendar.getInstance()
+        lunarCalendar.setSolarDate(selectedDate[Calendar.YEAR], selectedDate[Calendar.MONTH]+1, selectedDate[Calendar.DAY_OF_MONTH])
+        // 입력 문자열을 날짜로 포맷
+        val inputDateString: String = lunarCalendar.lunarIsoFormat // 변환될 문자열 : "2023-10-19"의 형태를 가지고 있음
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) // 포맷 형태 설정
+        val formattedInputDate: Date? = inputFormat.parse(inputDateString)
+        // 원하는 출력 형태로 재포맷
+        val outputFormat = SimpleDateFormat("MM.dd", Locale.getDefault())
+        val formattedOutputDate = outputFormat.format(formattedInputDate!!) // 원하는 형태인 "09.05" 형태로 포맷됨
+        // 포맷된 문자열을 음력 텍스트뷰에 설정
+        binding.selectedDayTextViewToLunar.text = String.format("음력 %s", formattedOutputDate)
+
+
+        // 등록된 일정 보여주기
+        //binding.showDiaryView.adapter = AdapterSchedule()
+    }
+}
