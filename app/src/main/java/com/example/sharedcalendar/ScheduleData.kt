@@ -5,5 +5,5 @@ data class ScheduleData(
     val start_date: String = "",
     val start_time: String = "",
     val end_date: String = "",
-    val ent_time: String = ""
+    val end_time: String = ""
 )
