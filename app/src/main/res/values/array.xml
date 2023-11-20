@@ -1,0 +1,39 @@
+<resources>
+    <array name="colors">
+        <item>#D22851</item>
+        <item>#E95073</item>
+        <item>#FE7F9C</item>
+        <item>#FECEDB</item>
+        <item>#FCE3EA</item>
+        <item>#C94717</item>
+        <item>#E7693D</item>
+        <item>#FE8F6C</item>
+        <item>#FED9BD</item>
+        <item>#FEEBD4</item>
+        <item>#C28200</item>
+        <item>#E09E00</item>
+        <item>#F6BC11</item>
+        <item>#F9EB8F</item>
+        <item>#F8F5B9</item>
+        <item>#18796E</item>
+        <item>#13A989</item>
+        <item>#54C7A0</item>
+        <item>#BCECD0</item>
+        <item>#DDF7DD</item>
+        <item>#2648AF</item>
+        <item>#3D71E5</item>
+        <item>#6DA3FE</item>
+        <item>#BCDAFE</item>
+        <item>#DBECFE</item>
+        <item>#631AC4</item>
+        <item>#7E40E6</item>
+        <item>#B183FE</item>
+        <item>#DEC5FE</item>
+        <item>#F1E1FD</item>
+        <item>#50555C</item>
+        <item>#717A7F</item>
+        <item>#9CA8AB</item>
+        <item>#CBD0D0</item>
+        <item>#E8E8E6</item>
+    </array>
+</resources>
