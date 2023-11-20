@@ -1,7 +1,14 @@
 # ---변경 사항 정리---  
 * 날짜 : 2023-11-20
-* 일시 : 09:20
+* 일시 : 13:55
   
-1. 인터넷 연결 안됐거나, 중간에 끊어지는 경우 앱 종료됨
-2. 일정 수정 및 삭제 구현(AddEventActivity 화면 재활용 하였으며 일정을 추가하는 경우에는 삭제버튼이 나타나지 않음)
-3. 각 일정마다 고유 색상을 지정할 수 있도록 설정
+1. SearchActivity.kt 추가
+2. SearchAdapter.kt 추가
+3. activity_search.xml 추가
+4. schedule_item.xml 추가
+5. activity_main.xml 에서 fab 버튼 색깔 수정
+6. MainActivity.kt 에서 fab 버튼 누를시 바로 addevent로 이동 하게함
+7. MainActivity.kt 에서 툴바 오른쪽에 검색 아이콘 누를시 검색 화면 전환
+8. 검색 화면 배경 흰색으로 수정
+9. 검색 화면에 검색어가 없을시 모든 일정이 나오지 않게 수정
+10. 일정 검색후 일정 누르면 일정 정보 유지한채 addevent로 화면전환
