@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "104832194990",
+    "project_id": "shared-calendar-team-park",
+    "storage_bucket": "shared-calendar-team-park.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:104832194990:android:74eea7c31425c72cc9503f",
+        "android_client_info": {
+          "package_name": "com.example.sharedcalendar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjD1bt88BBJES-Q9JQKyXD4LZB5fZhCSQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
