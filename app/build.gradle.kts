@@ -72,4 +72,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics-ktx")
 
     implementation("androidx.multidex:multidex:2.0.1")
+    implementation ("com.google.firebase:firebase-messaging-ktx:23.3.1")
+    implementation ("com.google.code.gson:gson:2.8.6")
 }

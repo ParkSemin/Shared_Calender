@@ -187,6 +187,18 @@
             android:backgroundTint="@color/default_color_schedule"/>
 
     </LinearLayout>
+    <TextView
+        android:id="@+id/timeSelectionTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="알림 시간 선택"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="10dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="20dp"
+        android:textSize="16sp"/>
 
     <ImageButton
         android:id="@+id/btnDeleteSchedule"

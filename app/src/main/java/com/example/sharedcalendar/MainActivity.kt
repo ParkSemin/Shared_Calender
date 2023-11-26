@@ -1,8 +1,13 @@
 package com.example.sharedcalendar
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -14,6 +19,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.NotificationCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.toColor
 import androidx.core.view.GravityCompat
@@ -25,14 +31,17 @@ import com.example.sharedcalendar.CalendarUtil.Companion.scheduleList
 import com.example.sharedcalendar.databinding.ActivityMainBinding
 import com.example.sharedcalendar.CalendarUtil.Companion.selectedDate // import selectedDate
 import com.example.sharedcalendar.CalendarUtil.Companion.today // import today
+import com.google.android.gms.tasks.OnCompleteListener
 import java.util.Calendar
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -71,12 +80,31 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
+        // 앱 시작 시 알림 채널을 생성합니다.
+        createNotificationChannel()
+
         window.apply {
             //상태바
             statusBarColor = Color.WHITE
             //상태바 아이콘(true: 검정 / false: 흰색)
             WindowInsetsControllerCompat(this, this.decorView).isAppearanceLightStatusBars = true
         }
+        // 앱의 시작 지점에서 Firebase 초기화
+        FirebaseApp.initializeApp(this)
+
+        FirebaseMessaging.getInstance().token
+            .addOnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.w(TAG, "FCM 토큰 얻기 실패", task.exception)
+                    return@addOnCompleteListener
+                }
+
+                // FCM 토큰을 얻은 경우
+                val token = task.result
+                Log.d(TAG, "FCM 토큰: $token")
+
+                // 여기서 얻은 토큰을 원하는 곳에 저장하거나 사용할 수 있습니다.
+            }
 
         selectedDate.clear(Calendar.HOUR_OF_DAY)
         selectedDate.clear(Calendar.MINUTE)
@@ -164,6 +192,24 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             intent.putExtra("selectedDate", selectedDate) // selectedDate를 "selectedDate"라는 키로 넘겨줌
             startActivity(intent)
             true
+        }
+    }
+    private fun createNotificationChannel() {
+        // Android Oreo(API 26+) 이상에서는 알림 채널을 생성해야 합니다.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "my_channel_id"
+            val channelName = "My Channel"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+
+            val notificationChannel = NotificationChannel(channelId, channelName, importance).apply {
+                description = "My Channel Description"
+                enableLights(true)
+                lightColor = Color.RED
+                enableVibration(true)
+            }
+
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(notificationChannel)
         }
     }
 

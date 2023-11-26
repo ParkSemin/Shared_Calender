@@ -1,31 +1,25 @@
 package com.example.sharedcalendar
 
 import android.app.DatePickerDialog
+import android.app.NotificationManager
 import android.app.TimePickerDialog
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.toColor
-import androidx.core.graphics.toColorLong
 import androidx.core.view.isVisible
 import com.example.sharedcalendar.CalendarUtil.Companion.selectedDate
-import com.example.sharedcalendar.CalendarUtil.Companion.today
 import com.example.sharedcalendar.databinding.ActivityAddEventBinding
-import com.github.dhaval2404.colorpicker.ColorPickerDialog
 import com.github.dhaval2404.colorpicker.MaterialColorPickerDialog
 import com.github.dhaval2404.colorpicker.model.ColorShape
 import com.github.dhaval2404.colorpicker.model.ColorSwatch
@@ -76,11 +70,11 @@ class AddEventActivity : AppCompatActivity() {
     // 일정 색상을 사용하기 위해 멤버 변수로 선언
     var scheduleColor: Int = 0 // 일단 0으로 하고 밑에서 바로 초기화 진행함
 
-
     @Override
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
 
         // 기본 색상 설정
         scheduleColor = ContextCompat.getColor(applicationContext, R.color.default_color_schedule)
@@ -163,6 +157,7 @@ class AddEventActivity : AppCompatActivity() {
                                     MotionToast.LONG_DURATION,
                                     ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
                                 )
+                                sendNotification3(schedule!!.title)
                                 val intent: Intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             })
@@ -243,6 +238,8 @@ class AddEventActivity : AppCompatActivity() {
             }
         }
 
+
+
         // 설정한 날짜, 시간을 버튼 텍스트에 설정
         updateTimeButtonText()
         updateDateButtonText()
@@ -312,6 +309,7 @@ class AddEventActivity : AppCompatActivity() {
         }
 
     }
+
 
     // 날짜 선택 함수
     private fun showDatePickerDialogForButton(button: Button, year: Int, month: Int, day: Int) {
@@ -462,6 +460,39 @@ class AddEventActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.menu_toolbar_add_event, menu)
         return true
     }
+    private fun sendNotification(scheduleTitle: String) {
+        // 알림 생성 및 표시
+        val notification = NotificationCompat.Builder(this, "my_channel_id")
+            .setContentTitle("일정 추가")
+            .setContentText("새로운 일정이 등록되었습니다: $scheduleTitle")
+            .setSmallIcon(R.drawable.ic_add)
+            .build()
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(0, notification)
+    }
+    private fun sendNotification2(scheduleTitle: String) {
+        // 알림 생성 및 표시
+        val notification = NotificationCompat.Builder(this, "my_channel_id")
+            .setContentTitle("일정 수정")
+            .setContentText("일정이 수정되었습니다: $scheduleTitle")
+            .setSmallIcon(R.drawable.ic_add)
+            .build()
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(0, notification)
+    }
+    private fun sendNotification3(scheduleTitle: String) {
+        // 알림 생성 및 표시
+        val notification = NotificationCompat.Builder(this, "my_channel_id")
+            .setContentTitle("일정 삭제")
+            .setContentText("일정이 삭제되었습니다: $scheduleTitle")
+            .setSmallIcon(R.drawable.ic_add)
+            .build()
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(0, notification)
+    }
 
     @Override
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -510,6 +541,7 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
+                                sendNotification(scheduleData.title)
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
@@ -559,6 +591,7 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
+                                sendNotification2(scheduleData.title)
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
