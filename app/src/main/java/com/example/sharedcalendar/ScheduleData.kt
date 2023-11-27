@@ -13,5 +13,6 @@ data class ScheduleData(
     val start_time: String = "",
     val end_date: String = "",
     val end_time: String = "",
-    val color: Int = 0
+    val color: Int = 0,
+    val notificationTime: Int = 0
 ) : Serializable

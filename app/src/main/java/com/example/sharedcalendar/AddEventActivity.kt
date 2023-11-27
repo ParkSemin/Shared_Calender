@@ -1,5 +1,6 @@
 package com.example.sharedcalendar
 
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.app.NotificationManager
 import android.app.TimePickerDialog
@@ -11,7 +12,10 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View.OnClickListener
 import android.widget.Button
+import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
@@ -22,11 +26,9 @@ import com.example.sharedcalendar.CalendarUtil.Companion.selectedDate
 import com.example.sharedcalendar.databinding.ActivityAddEventBinding
 import com.github.dhaval2404.colorpicker.MaterialColorPickerDialog
 import com.github.dhaval2404.colorpicker.model.ColorShape
-import com.github.dhaval2404.colorpicker.model.ColorSwatch
 import com.google.firebase.Firebase
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.database
-import org.jetbrains.annotations.Async.Schedule
 import www.sanju.motiontoast.MotionToast
 import www.sanju.motiontoast.MotionToastStyle
 import java.util.Calendar
@@ -64,12 +66,17 @@ class AddEventActivity : AppCompatActivity() {
     private var endHour = 0
     private var endMinute = 0
 
+    private var minutesBefore = 0
+
     // AdapterSchedule에서 넘겨받은 tempSchedule을 클래스 전체에서 사용하기 위해 멤버 변수로 선언
     var schedule: ScheduleData? = null
 
     // 일정 색상을 사용하기 위해 멤버 변수로 선언
     var scheduleColor: Int = 0 // 일단 0으로 하고 밑에서 바로 초기화 진행함
 
+    companion object {
+        private const val NOTIFICATION_SETTINGS_REQUEST_CODE = 1
+    }
     @Override
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +91,11 @@ class AddEventActivity : AppCompatActivity() {
             intent.getSerializableExtra("tempSchedule", ScheduleData::class.java)
         } else {
             intent.getSerializableExtra("tempSchedule") as ScheduleData
+        }
+
+        binding.notificationButton.setOnClickListener {
+            val intent = Intent(this, NotificationSettingsActivity::class.java)
+            startActivityForResult(intent, NOTIFICATION_SETTINGS_REQUEST_CODE)
         }
 
         // 일정을 추가하는 경우 schedule == null이고 수정하는 경우에는 해당 일정 정보가 들어감
@@ -157,7 +169,6 @@ class AddEventActivity : AppCompatActivity() {
                                     MotionToast.LONG_DURATION,
                                     ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
                                 )
-                                sendNotification3(schedule!!.title)
                                 val intent: Intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             })
@@ -237,6 +248,19 @@ class AddEventActivity : AppCompatActivity() {
                 else -> ""
             }
         }
+        // Get the 'minutesBefore' variable from the intent
+        minutesBefore = intent.getIntExtra("minutesBefore", 0)
+
+        // Use 'minutesBefore' as needed in this activity
+        // For example, display it in a TextView
+        val minutesBeforeTextView = findViewById<TextView>(R.id.minutesBeforeTextView)
+        minutesBeforeTextView.text = when (minutesBefore) {
+            0 -> "알림 없음"
+            1 -> "당일 알림"
+            100 -> "10초 후 알림"
+            else -> "알림 ${minutesBefore}분 전"
+        }
+
 
 
 
@@ -308,6 +332,14 @@ class AddEventActivity : AppCompatActivity() {
                 .show()
         }
 
+    }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == NOTIFICATION_SETTINGS_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            val minutesBefore = data?.getIntExtra("minutesBefore", 0) ?: 0
+            // minutesBefore 값을 사용하여 UI 업데이트 또는 데이터 처리
+        }
     }
 
 
@@ -460,39 +492,7 @@ class AddEventActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.menu_toolbar_add_event, menu)
         return true
     }
-    private fun sendNotification(scheduleTitle: String) {
-        // 알림 생성 및 표시
-        val notification = NotificationCompat.Builder(this, "my_channel_id")
-            .setContentTitle("일정 추가")
-            .setContentText("새로운 일정이 등록되었습니다: $scheduleTitle")
-            .setSmallIcon(R.drawable.ic_add)
-            .build()
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(0, notification)
-    }
-    private fun sendNotification2(scheduleTitle: String) {
-        // 알림 생성 및 표시
-        val notification = NotificationCompat.Builder(this, "my_channel_id")
-            .setContentTitle("일정 수정")
-            .setContentText("일정이 수정되었습니다: $scheduleTitle")
-            .setSmallIcon(R.drawable.ic_add)
-            .build()
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(0, notification)
-    }
-    private fun sendNotification3(scheduleTitle: String) {
-        // 알림 생성 및 표시
-        val notification = NotificationCompat.Builder(this, "my_channel_id")
-            .setContentTitle("일정 삭제")
-            .setContentText("일정이 삭제되었습니다: $scheduleTitle")
-            .setSmallIcon(R.drawable.ic_add)
-            .build()
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(0, notification)
-    }
 
     @Override
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -524,7 +524,8 @@ class AddEventActivity : AppCompatActivity() {
                             "${startHour}:${startMinute}",
                             "${endYear}-${endMonth + 1}-${endDay}",
                             "${endHour}:${endMinute}",
-                            scheduleColor
+                            scheduleColor,
+                            minutesBefore
                         )
 
                         scheduleRef.setValue(scheduleData)
@@ -541,7 +542,6 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
-                                sendNotification(scheduleData.title)
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
@@ -574,7 +574,8 @@ class AddEventActivity : AppCompatActivity() {
                             "${startHour}:${startMinute}",
                             "${endYear}-${endMonth + 1}-${endDay}",
                             "${endHour}:${endMinute}",
-                            scheduleColor
+                            scheduleColor,
+                            minutesBefore
                         )
 
                         scheduleRef.setValue(scheduleData)
@@ -591,7 +592,6 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
-                                sendNotification2(scheduleData.title)
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }

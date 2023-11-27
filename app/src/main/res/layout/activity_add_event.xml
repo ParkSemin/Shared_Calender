@@ -187,18 +187,39 @@
             android:backgroundTint="@color/default_color_schedule"/>
 
     </LinearLayout>
-    <TextView
-        android:id="@+id/timeSelectionTextView"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="알림 시간 선택"
-        android:clickable="true"
-        android:focusable="true"
-        android:padding="10dp"
-        android:background="?android:attr/selectableItemBackground"
-        android:layout_marginStart="20dp"
-        android:layout_marginBottom="20dp"
-        android:textSize="16sp"/>
+        android:paddingVertical="10dp"
+        android:paddingHorizontal="20dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_alarm"/>
+
+        <Button
+            android:id="@+id/notificationButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="5dp"
+            android:background="#4FFFFFFF"
+            android:text="알림 설정"
+            android:layout_gravity="center"
+            android:textColor="@color/black"
+            android:padding="10dp"
+            android:elevation="8dp" />
+
+        <TextView
+            android:id="@+id/minutesBeforeTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:text="알림 정보" />
+
+    </LinearLayout>
 
     <ImageButton
         android:id="@+id/btnDeleteSchedule"
