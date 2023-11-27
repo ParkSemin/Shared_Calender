@@ -3,9 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
     <application
         android:name=".MyApplication"
@@ -44,9 +44,6 @@
             android:screenOrientation="portrait"/>
         <activity
             android:name=".SearchActivity"
-            android:screenOrientation="portrait"/>
-        <activity
-            android:name=".NotificationSettingsActivity"
             android:screenOrientation="portrait"/>
         <receiver android:name=".AlarmReceiver" />
     </application>

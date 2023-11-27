@@ -1,14 +1,17 @@
 package com.example.sharedcalendar
 
 import android.app.AlarmManager
+import android.app.AppOpsManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -37,6 +40,7 @@ import com.example.sharedcalendar.CalendarUtil.Companion.today // import today
 import com.google.android.gms.tasks.OnCompleteListener
 import java.util.Calendar
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
@@ -64,6 +68,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     private var database: DatabaseReference = Firebase.database.reference
     private val myRef = database.database.getReference("users")
     private val myScheduleRef = database.database.getReference("schedules")
+    private val REQUEST_PERMISSION_CODE = 123 // 권한 요청 코드 (임의 설정)
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
@@ -122,7 +127,6 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         }
         val snap = PagerSnapHelper()
         snap.attachToRecyclerView(binding.calendarCustom)
-        syncDatabase()
         binding.showDiaryView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
 
         // AddEventActivity에서 일정 추가하고 다시 돌아오면 변경 사항을 반영해야 함
@@ -192,8 +196,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         }
     }
     private fun syncDatabase() {
-        val databaseReference = FirebaseDatabase.getInstance().getReference("schedules")
-        databaseReference.addValueEventListener(object : ValueEventListener {
+        myScheduleRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 handleDatabaseChanges(dataSnapshot)
             }
@@ -329,8 +332,27 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                     .setMessage("정말 탈퇴하시겠습니까?")
                     .setPositiveButton("확인",
                         DialogInterface.OnClickListener { _, _ ->
+                            // 1. DB에 등록된 사용자 계정 삭제
                             myRef.child(MyApplication.email_revised.toString()).removeValue()
-                            myScheduleRef.removeValue()
+                            // 2. 탈퇴하려는 사용자가 최초 등록자인 일정 찾아서 삭제
+                            myScheduleRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                                    for (eventSnapshot in dataSnapshot.children) {
+                                        val event = eventSnapshot.getValue(ScheduleData::class.java)
+
+                                        // firstTimeRegistrantAccount와 탈퇴하는 회원의 이메일 비교
+                                        if (event?.firstTimeRegistrantAccount == MyApplication.email) {
+                                            // 해당 사용자가 등록한 일정이므로 삭제
+                                            eventSnapshot.ref.removeValue() // 이벤트 삭제
+                                        }
+                                    }
+                                }
+                                // DB 일정 데이터를 가져오지 못한 경우
+                                override fun onCancelled(error: DatabaseError) {
+                                    Toast.makeText(applicationContext, "DB 데이터 읽기 실패", Toast.LENGTH_LONG).show()
+                                }
+                            })
+                            // 3. Authentication에 등록된 사용자 계정 삭제
                             MyApplication.auth.currentUser?.delete()
                             MotionToast.darkColorToast(
                                 this,

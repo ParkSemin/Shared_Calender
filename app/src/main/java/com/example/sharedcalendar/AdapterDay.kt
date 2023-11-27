@@ -59,8 +59,12 @@ class AdapterDay(private val binding: ActivityMainBinding, private val tempMonth
 
         // 선택된 날짜 배경 색상 설정
         if(dayList[position] == selectedDate.time) {
-            holder.item_day_text.setBackgroundResource(R.drawable.round_calendar_cell_selected)
-            oldHolder = holder
+            //선택한 날짜가 오늘일 경우에는 배경 색상 변경 안함
+            if(dayList[position] != today.time){
+                //선택한 날짜의 배경 색상 변경
+                holder.item_day_text.setBackgroundResource(R.drawable.round_calendar_cell_selected)
+                oldHolder = holder
+            }
             changeSelectedDateView()
         }
 

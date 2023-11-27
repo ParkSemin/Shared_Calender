@@ -51,6 +51,7 @@ class SearchAdapter(private val scheduleList: List<ScheduleData>) : RecyclerView
             binding.titleTextView.text = schedule.title // 일정 제목 텍스트 설정
             binding.startDateTextView.text = schedule.start_date // 시작 날짜 텍스트 설정
             binding.endDateTextView.text = schedule.end_date // 종료 날짜 텍스트 설정
+            binding.itemNameView.text = schedule.finalReviser // 최종 수정자 이름
             // 다른 필드에 대한 바인딩도 추가 가능
         }
     }
