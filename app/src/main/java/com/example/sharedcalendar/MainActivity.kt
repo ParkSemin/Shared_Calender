@@ -26,6 +26,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.toColor
 import androidx.core.view.GravityCompat
@@ -68,7 +69,6 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     private var database: DatabaseReference = Firebase.database.reference
     private val myRef = database.database.getReference("users")
     private val myScheduleRef = database.database.getReference("schedules")
-    private val REQUEST_PERMISSION_CODE = 123 // 권한 요청 코드 (임의 설정)
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
@@ -88,6 +88,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             backPressedTime = System.currentTimeMillis()
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
@@ -98,15 +99,16 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             //상태바 아이콘(true: 검정 / false: 흰색)
             WindowInsetsControllerCompat(this, this.decorView).isAppearanceLightStatusBars = true
         }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!getSystemService(AlarmManager::class.java).canScheduleExactAlarms()) {
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                startActivity(intent)
-            }
+        // 알림 권한 요청
+        if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+            // 권한이 이미 허용되어 있음
+            // 필요한 작업 수행
+        } else {
+            // 권한을 요청하는 대화상자 표시
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            startActivity(intent)
         }
-
-        syncDatabase() // 알림설정
 
         selectedDate.clear(Calendar.HOUR_OF_DAY)
         selectedDate.clear(Calendar.MINUTE)
@@ -137,6 +139,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                 CoroutineScope(Dispatchers.IO).launch {
                     runBlocking {
                         for(snapshot in dataSnapshot.children) {
+                            handleDatabaseChanges(dataSnapshot)
                             val scheduleData = snapshot.getValue(ScheduleData::class.java)
                             scheduleData?.let {
                                 // 읽어온 데이터를 리스트에 추가
@@ -195,69 +198,77 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             true
         }
     }
-    private fun syncDatabase() {
-        myScheduleRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                handleDatabaseChanges(dataSnapshot)
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                // 오류 처리
-            }
-        })
-    }
     fun handleDatabaseChanges(dataSnapshot: DataSnapshot) {
         // 이미 설정된 알람을 추적하기 위한 맵
         val existingAlarms = hashMapOf<String, ScheduleData>()
+
+        // SharedPreferences 인스턴스와 편집자 가져오기
+        val sharedPrefs = getSharedPreferences("AlarmPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPrefs.edit()
 
         dataSnapshot.children.forEach { scheduleSnapshot ->
             val schedule = scheduleSnapshot.getValue(ScheduleData::class.java)
             schedule?.let {
                 if (existingAlarms.containsKey(it.key)) {
                     updateAlarm(it) // 알람 수정
+                    Log.d("MyApp", "아림 수정 notificationTime: ${it.notificationTime}")
                 } else {
                     setAlarm(it) // 새 알람 설정
+                    Log.d("MyApp", "아림 추가 notificationTime: ${it.notificationTime}")
                 }
                 existingAlarms[it.key] = it
             }
         }
 
-        // 데이터베이스에서 삭제된 알람 확인 및 제거
-        existingAlarms.keys.forEach { key ->
-            if (!dataSnapshot.hasChild(key)) {
-                cancelAlarm(existingAlarms[key]!!)
-                existingAlarms.remove(key)
-            }
+        // 데이터베이스에서 삭제된 알람 확인 및 SharedPreferences에서 제거
+        val keysToRemove = existingAlarms.keys.filterNot { dataSnapshot.hasChild(it) }
+        keysToRemove.forEach { key ->
+            cancelAlarm(existingAlarms[key]!!)
+            existingAlarms.remove(key)
+
+            // SharedPreferences에서도 관련 데이터 삭제
+            editor.remove("EXTRA_TITLE_$key")
+            editor.remove("EXTRA_NOTIFICATION_TIME_$key")
         }
     }
     private fun setAlarm(scheduleData: ScheduleData) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val alarmIntent = Intent(this, AlarmReceiver::class.java).apply {
-            putExtra("EXTRA_TITLE", scheduleData.title) // 일정명 추가
-            putExtra("EXTRA_NOTIFICATION_TIME", scheduleData.notificationTime) // notificationTime 추가
-        }
-        val pendingIntent = PendingIntent.getBroadcast(this, scheduleData.key.hashCode(), alarmIntent, PendingIntent.FLAG_IMMUTABLE)
 
+        // AlarmReceiver를 호출하기 위한 Intent 생성
+        val alarmIntent = Intent(this, AlarmReceiver::class.java).apply {
+            putExtra("ALARM_ID", scheduleData.key) // 인텐트에 알람 ID 추가
+        }
+
+        // PendingIntent 생성
+        val requestCode = scheduleData.key.hashCode()
+        val pendingIntent = PendingIntent.getBroadcast(this, requestCode, alarmIntent, PendingIntent.FLAG_IMMUTABLE)
+
+        // 알람 시간 계산
         val alarmTime = calculateAlarmTime(scheduleData.start_date, scheduleData.start_time, scheduleData.notificationTime)
+
+        // 알람 시간이 현재 시간보다 이후인 경우에만 알람 설정
         if (System.currentTimeMillis() < alarmTime) {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent)
         } else {
-            // 현재 시간이 알람 시간보다 이후이면, 알람 설정 안 함
-            // 필요하다면 여기에 사용자에게 알림 시간이 지났음을 알리는 로직을 추가할 수 있습니다.
+            // 현재 시간이 알람 시간보다 이후인 경우 처리
+        }
+
+        // SharedPreferences에 알람 데이터 저장
+        val sharedPrefs = getSharedPreferences("AlarmPrefs", Context.MODE_PRIVATE)
+        with(sharedPrefs.edit()) {
+            putString("EXTRA_TITLE_${scheduleData.key}", scheduleData.title)
+            putInt("EXTRA_NOTIFICATION_TIME_${scheduleData.key}", scheduleData.notificationTime)
+            apply()
         }
         Log.d("AlarmManager", "Alarm set for: $alarmTime")
     }
     private fun calculateAlarmTime(startDate: String, startTime: String, notificationTime: Int): Long {
         return when (notificationTime) {
             0 -> 0 // 알람을 설정하지 않음
-            1 -> {
+            2 -> {
                 // 당일 정해진 시간에 알람 설정
                 val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                 format.parse("$startDate $startTime")?.time ?: 0
-            }
-            100 -> {
-                // 현재 시간으로부터 10초 후
-                System.currentTimeMillis() + 10_000
             }
             else -> {
                 // 기본 로직: notificationTime만큼 빼기
@@ -273,8 +284,11 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     }
 
     private fun updateAlarm(scheduleData: ScheduleData) {
+        Log.d("AlarmManager", "알림 Alarm set for: 호출호출")
         cancelAlarm(scheduleData) // 먼저 기존 알람을 취소
+        Log.d("AlarmManager", "알림 Alarm set for: 삭제삭제")
         setAlarm(scheduleData) // 그리고 새 알람을 설정
+        Log.d("AlarmManager", "알림 Alarm set for: 수정수정")
     }
 
     private fun cancelAlarm(scheduleData: ScheduleData) {
@@ -283,6 +297,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             PendingIntent.getBroadcast(this, scheduleData.key.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE)
         }
         alarmManager.cancel(alarmIntent)
+        Log.d("AlarmManager", "Alarm canceled for schedule: ${scheduleData.title}")
     }
 
 

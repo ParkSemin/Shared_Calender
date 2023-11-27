@@ -13,6 +13,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.example.sharedcalendar.databinding.ActivitySignupBinding
 import com.google.firebase.Firebase
@@ -48,7 +49,7 @@ class SignupActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 name_ok = s?.length!! >= 2
                 if (name_ok) {
-                    binding.nameokText.setTextColor(Color.GREEN)
+                    binding.nameokText.setTextColor(ContextCompat.getColor(applicationContext, R.color.green))
                     binding.nameokText.text = "유효한 이름"
                 } else {
                     binding.nameokText.setTextColor(Color.RED)
@@ -65,7 +66,7 @@ class SignupActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 id_ok = s?.length!! > 6 && '@' in s
                 if (id_ok) {
-                    binding.idokText.setTextColor(Color.GREEN)
+                    binding.idokText.setTextColor(ContextCompat.getColor(applicationContext, R.color.green))
                     binding.idokText.text = "유효한 아이디"
                 } else {
                     binding.idokText.setTextColor(Color.RED)
@@ -82,7 +83,7 @@ class SignupActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 pw_ok = s?.length!! >= 6 && checkPassword() // 6자 이상 + 비밀번호 입력 정상
                 if (s?.length!! >= 6) {
-                    binding.pwokText.setTextColor(Color.GREEN)
+                    binding.pwokText.setTextColor(ContextCompat.getColor(applicationContext, R.color.green))
                     binding.pwokText.text = "유효한 비밀번호"
                 } else {
                     binding.pwokText.setTextColor(Color.RED)
@@ -99,7 +100,7 @@ class SignupActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 pw_ok = s?.length!! >= 6 && checkPassword() // 6자 이상 + 비밀번호 입력 정상
                 if (pw_ok) {
-                    binding.pwcheckokText.setTextColor(Color.GREEN)
+                    binding.pwcheckokText.setTextColor(ContextCompat.getColor(applicationContext, R.color.green))
                     binding.pwcheckokText.text = "유효한 비밀번호 확인"
                 } else {
                     binding.pwcheckokText.setTextColor(Color.RED)

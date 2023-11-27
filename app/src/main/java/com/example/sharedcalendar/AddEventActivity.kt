@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View.OnClickListener
@@ -40,15 +41,6 @@ class AddEventActivity : AppCompatActivity() {
     // private var myRef = database.database.getReference("schedules").child(MyApplication.email_revised.toString())
     private val myRef = database.database.getReference("schedules")
 
-    private val notificationOptionsWithVariables = mapOf(
-        "알림 없음" to 0,
-        "정시 알림" to 1,
-        "5분 전" to 5,
-        "10분 전" to 10,
-        "15분 전" to 15,
-        "1시간 전" to 60,
-        "test 10초 뒤" to 100
-    )
 
     // MainActivity로부터 넘겨 받은 년, 월, 일, 요일 정보 저장할 year, month, day, dayOfWeekString 멤버 변수 선언
     private var year = 0
@@ -84,8 +76,6 @@ class AddEventActivity : AppCompatActivity() {
     // 일정 색상을 사용하기 위해 멤버 변수로 선언
     var scheduleColor: Int = 0 // 일단 0으로 하고 밑에서 바로 초기화 진행함
 
-    // 다이얼로그 객체 선언
-    private lateinit var dialog: AlertDialog
 
     @Override
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,35 +93,7 @@ class AddEventActivity : AppCompatActivity() {
             intent.getSerializableExtra("tempSchedule") as ScheduleData
         }
 
-        binding.notificationButton.setOnClickListener {
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle("알림 설정")
-            val options = arrayOf(
-                "알림 없음",
-                "정시 알림",
-                "5분 전",
-                "10분 전",
-                "15분 전",
-                "1시간 전",
-                "test 10초 뒤"
-            )
-
-            builder.setItems(options) { _, which ->
-                val selectedOption = options[which]
-                minutesBefore = notificationOptionsWithVariables[selectedOption] ?: 0
-
-                // 선택된 옵션을 사용하여 UI 업데이트 또는 데이터 처리
-                val minutesBeforeTextView = findViewById<TextView>(R.id.minutesBeforeTextView)
-                minutesBeforeTextView.text = when (minutesBefore) {
-                    0 -> "알림 없음"
-                    1 -> "당일 알림"
-                    100 -> "10초 후 알림"
-                    else -> "알림 ${minutesBefore}분 전"
-                }
-            }
-
-            builder.show()
-        }
+        val minutesBeforeTextView = findViewById<TextView>(R.id.minutesBeforeTextView)
 
         // 일정을 추가하는 경우 schedule == null이고 수정하는 경우에는 해당 일정 정보가 들어감
         if (schedule == null) {
@@ -282,6 +244,15 @@ class AddEventActivity : AppCompatActivity() {
                 Calendar.SATURDAY -> "토"
                 else -> ""
             }
+
+            // 7. 알림 설정
+            minutesBefore = schedule!!.notificationTime
+            minutesBeforeTextView.text = when (minutesBefore) {
+                0 -> "알림 없음"
+                2 -> "정시 알림"
+                60 -> "알림 1시간 전"
+                else -> "알림 ${minutesBefore}분 전"
+            }
         }
 
 
@@ -352,6 +323,42 @@ class AddEventActivity : AppCompatActivity() {
                     window.statusBarColor = scheduleColor
                 }
                 .show()
+        }
+        binding.notificationButton.setOnClickListener {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("알림 설정")
+            val options = arrayOf(
+                "알림 없음",
+                "정시 알림",
+                "5분 전",
+                "10분 전",
+                "15분 전",
+                "1시간 전"
+            )
+
+            val notificationOptionsWithVariables = mapOf(
+                "알림 없음" to 0,
+                "정시 알림" to 2,
+                "5분 전" to 5,
+                "10분 전" to 10,
+                "15분 전" to 15,
+                "1시간 전" to 60
+            )
+
+            builder.setItems(options) { _, which ->
+                val selectedOption = options[which]
+                minutesBefore = notificationOptionsWithVariables[selectedOption] ?: 0
+
+                // 선택된 옵션을 사용하여 UI 업데이트 또는 데이터 처리
+                minutesBeforeTextView.text = when (minutesBefore) {
+                    0 -> "알림 없음"
+                    2 -> "정시 알림"
+                    60 -> "알림 1시간 전"
+                    else -> "알림 ${minutesBefore}분 전"
+                }
+            }
+
+            builder.show()
         }
 
     }
@@ -557,6 +564,7 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
+                                Log.d("MyApp", "minutesBefore: $minutesBefore")
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
@@ -607,6 +615,7 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
+                                Log.d("MyApp", "수정 minutesBefore: $minutesBefore")
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
