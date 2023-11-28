@@ -1,5 +1,6 @@
 package com.example.sharedcalendar
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.AppOpsManager
 import android.app.NotificationChannel
@@ -139,12 +140,12 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                 CoroutineScope(Dispatchers.IO).launch {
                     runBlocking {
                         for(snapshot in dataSnapshot.children) {
-                            handleDatabaseChanges(dataSnapshot)
                             val scheduleData = snapshot.getValue(ScheduleData::class.java)
                             scheduleData?.let {
                                 // 읽어온 데이터를 리스트에 추가
                                 scheduleList.add(it)
                             }
+                            handleDatabaseChanges(dataSnapshot)
                         }
                     }
                 }
@@ -231,37 +232,47 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             editor.remove("EXTRA_NOTIFICATION_TIME_$key")
         }
     }
+
+
+    @SuppressLint("UnspecifiedImmutableFlag")
     private fun setAlarm(scheduleData: ScheduleData) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        // AlarmReceiver를 호출하기 위한 Intent 생성
         val alarmIntent = Intent(this, AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", scheduleData.key) // 인텐트에 알람 ID 추가
+            putExtra("ALARM_ID", scheduleData.key) // 알람 ID를 인텐트에 추가
         }
-
-        // PendingIntent 생성
         val requestCode = scheduleData.key.hashCode()
         val pendingIntent = PendingIntent.getBroadcast(this, requestCode, alarmIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        // 알람 시간 계산
         val alarmTime = calculateAlarmTime(scheduleData.start_date, scheduleData.start_time, scheduleData.notificationTime)
 
-        // 알람 시간이 현재 시간보다 이후인 경우에만 알람 설정
-        if (System.currentTimeMillis() < alarmTime) {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent)
+        // Android 12 이상에서 정확한 알람 권한 확인
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()) {
+            try {
+                if (System.currentTimeMillis() < alarmTime) {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent)
+                    Log.d("AlarmManager", "알람 설정 시간: $alarmTime")
+                } else {
+                    Log.d("AlarmManager", "이미 지난 알람 시간: ${scheduleData.title}")
+                }
+            } catch (e: SecurityException) {
+                Log.e("AlarmManager", "정확한 알람 설정 실패", e)
+                // 예외 처리, 사용자에게 알림 가능
+            }
         } else {
-            // 현재 시간이 알람 시간보다 이후인 경우 처리
+            // 사용자를 시스템 설정으로 안내하여 정확한 알람 권한을 활성화
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            startActivity(intent)
         }
 
-        // SharedPreferences에 알람 데이터 저장
         val sharedPrefs = getSharedPreferences("AlarmPrefs", Context.MODE_PRIVATE)
         with(sharedPrefs.edit()) {
             putString("EXTRA_TITLE_${scheduleData.key}", scheduleData.title)
             putInt("EXTRA_NOTIFICATION_TIME_${scheduleData.key}", scheduleData.notificationTime)
             apply()
         }
-        Log.d("AlarmManager", "Alarm set for: $alarmTime")
     }
+
+
+
     private fun calculateAlarmTime(startDate: String, startTime: String, notificationTime: Int): Long {
         return when (notificationTime) {
             0 -> 0 // 알람을 설정하지 않음
