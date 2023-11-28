@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".NotificationSettingsActivity">
+
+    <!-- TextView to display selected notification text -->
+    <TextView
+        android:id="@+id/selectedNotificationText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:text="알림"
+        android:textSize="16sp" />
+
+    <!-- List of notification text options -->
+    <ListView
+        android:id="@+id/notificationListView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/selectedNotificationText"
+        android:layout_marginTop="20dp"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="1dp" />
+</RelativeLayout>
+
