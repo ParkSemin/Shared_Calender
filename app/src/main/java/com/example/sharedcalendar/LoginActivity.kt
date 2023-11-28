@@ -199,6 +199,11 @@ class LoginActivity : AppCompatActivity() {
         if (requestCode == REQUEST_CODE_NOTIFICATION_PERMISSION) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // 알림 권한이 허용된 경우
+                Snackbar.make(
+                    binding.root,
+                    "알림 권한이 허용되었습니다.",
+                    Snackbar.LENGTH_LONG
+                ).show()
             } else {
                 // 알림 권한이 거부된 경우
                 Snackbar.make(
