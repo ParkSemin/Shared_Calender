@@ -103,35 +103,7 @@ class AddEventActivity : AppCompatActivity() {
             intent.getSerializableExtra("tempSchedule") as ScheduleData
         }
 
-        binding.notificationButton.setOnClickListener {
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle("알림 설정")
-            val options = arrayOf(
-                "알림 없음",
-                "정시 알림",
-                "5분 전",
-                "10분 전",
-                "15분 전",
-                "1시간 전",
-                "test 10초 뒤"
-            )
-
-            builder.setItems(options) { _, which ->
-                val selectedOption = options[which]
-                minutesBefore = notificationOptionsWithVariables[selectedOption] ?: 0
-
-                // 선택된 옵션을 사용하여 UI 업데이트 또는 데이터 처리
-                val minutesBeforeTextView = findViewById<TextView>(R.id.minutesBeforeTextView)
-                minutesBeforeTextView.text = when (minutesBefore) {
-                    0 -> "알림 없음"
-                    1 -> "당일 알림"
-                    100 -> "10초 후 알림"
-                    else -> "알림 ${minutesBefore}분 전"
-                }
-            }
-
-            builder.show()
-        }
+        val minutesBeforeTextView = findViewById<TextView>(R.id.minutesBeforeTextView)
 
         // 일정을 추가하는 경우 schedule == null이고 수정하는 경우에는 해당 일정 정보가 들어감
         if (schedule == null) {
@@ -282,6 +254,15 @@ class AddEventActivity : AppCompatActivity() {
                 Calendar.SATURDAY -> "토"
                 else -> ""
             }
+
+            // 7. 알림 설정
+            minutesBefore = schedule!!.notificationTime
+            minutesBeforeTextView.text = when (minutesBefore) {
+                0 -> "알림 없음"
+                2 -> "정시 알림"
+                60 -> "알림 1시간 전"
+                else -> "알림 ${minutesBefore}분 전"
+            }
         }
 
 
@@ -352,6 +333,42 @@ class AddEventActivity : AppCompatActivity() {
                     window.statusBarColor = scheduleColor
                 }
                 .show()
+        }
+        binding.notificationButton.setOnClickListener {
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("알림 설정")
+            val options = arrayOf(
+                "알림 없음",
+                "정시 알림",
+                "5분 전",
+                "10분 전",
+                "15분 전",
+                "1시간 전"
+            )
+
+            val notificationOptionsWithVariables = mapOf(
+                "알림 없음" to 0,
+                "정시 알림" to 2,
+                "5분 전" to 5,
+                "10분 전" to 10,
+                "15분 전" to 15,
+                "1시간 전" to 60
+            )
+
+            builder.setItems(options) { _, which ->
+                val selectedOption = options[which]
+                minutesBefore = notificationOptionsWithVariables[selectedOption] ?: 0
+
+                // 선택된 옵션을 사용하여 UI 업데이트 또는 데이터 처리
+                minutesBeforeTextView.text = when (minutesBefore) {
+                    0 -> "알림 없음"
+                    2 -> "정시 알림"
+                    60 -> "알림 1시간 전"
+                    else -> "알림 ${minutesBefore}분 전"
+                }
+            }
+
+            builder.show()
         }
 
     }
