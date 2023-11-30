@@ -30,11 +30,15 @@ import com.example.sharedcalendar.CalendarUtil.Companion.today
 import com.example.sharedcalendar.databinding.ActivityMainBinding
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -52,7 +56,8 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     private var database: DatabaseReference = Firebase.database.reference
     private val myRef = database.database.getReference("users")
     private val myScheduleRef = database.database.getReference("schedules")
-    private val REQUEST_PERMISSION_CODE = 123 // 권한 요청 코드 (임의 설정)
+    // 이미 설정된 알람을 추적하기 위한 맵
+    private val existingAlarms = hashMapOf<String, ScheduleData>()
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
@@ -89,7 +94,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                 startActivity(intent)
             }
         }
-
+        registerPushToken()
         selectedDate.clear(Calendar.HOUR_OF_DAY)
         selectedDate.clear(Calendar.MINUTE)
         selectedDate.clear(Calendar.SECOND)
@@ -181,50 +186,45 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     }
 
     private fun syncDatabase() {
-        myScheduleRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                handleDatabaseChanges(dataSnapshot)
+        myScheduleRef.addChildEventListener(object : ChildEventListener {
+            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                dataSnapshot.getValue(ScheduleData::class.java)?.let {
+                    setAlarm(it)
+                    // 새로운 알람을 existingAlarms 맵에 추가
+                    existingAlarms[it.key] = it
+                }
+            }
+
+            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                dataSnapshot.getValue(ScheduleData::class.java)?.let {
+                    updateAlarm(it)
+                    // 기존 알람 정보를 existingAlarms 맵에서 업데이트
+                    existingAlarms[it.key] = it
+                }
+            }
+
+            override fun onChildRemoved(dataSnapshot: DataSnapshot) {
+                dataSnapshot.getValue(ScheduleData::class.java)?.let { scheduleData ->
+                    cancelAlarm(scheduleData)
+                    // 알람 취소 후 existingAlarms 맵에서 해당 키 삭제
+                    existingAlarms.remove(scheduleData.key)
+
+                    // SharedPreferences에서 관련 데이터 삭제
+                    val editor = getSharedPreferences("AlarmPrefs", Context.MODE_PRIVATE).edit()
+                    editor.remove("EXTRA_TITLE_${scheduleData.key}")
+                    editor.remove("EXTRA_NOTIFICATION_TIME_${scheduleData.key}")
+                    editor.apply()
+                }
+            }
+
+            override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                // 필요한 경우 여기에 로직 추가
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
                 // 오류 처리
             }
         })
-    }
-
-
-    fun handleDatabaseChanges(dataSnapshot: DataSnapshot) {
-        // 이미 설정된 알람을 추적하기 위한 맵
-        val existingAlarms = hashMapOf<String, ScheduleData>()
-
-        // SharedPreferences 인스턴스와 편집자 가져오기
-        val sharedPrefs = getSharedPreferences("AlarmPrefs", Context.MODE_PRIVATE)
-        val editor = sharedPrefs.edit()
-
-        dataSnapshot.children.forEach { scheduleSnapshot ->
-            val schedule = scheduleSnapshot.getValue(ScheduleData::class.java)
-            schedule?.let {
-                if (existingAlarms.containsKey(it.key)) {
-                    updateAlarm(it) // 알람 수정
-                    Log.d("MyApp", "아림 수정 notificationTime: ${it.notificationTime}")
-                } else {
-                    setAlarm(it) // 새 알람 설정
-                    Log.d("MyApp", "아림 추가 notificationTime: ${it.notificationTime}")
-                }
-                existingAlarms[it.key] = it
-            }
-        }
-
-        // 데이터베이스에서 삭제된 알람 확인 및 SharedPreferences에서 제거
-        val keysToRemove = existingAlarms.keys.filterNot { dataSnapshot.hasChild(it) }
-        keysToRemove.forEach { key ->
-            cancelAlarm(existingAlarms[key]!!)
-            existingAlarms.remove(key)
-
-            // SharedPreferences에서도 관련 데이터 삭제
-            editor.remove("EXTRA_TITLE_$key")
-            editor.remove("EXTRA_NOTIFICATION_TIME_$key")
-        }
     }
 
 
@@ -243,12 +243,9 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             try {
                 if (System.currentTimeMillis() < alarmTime) {
                     alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent)
-                    Log.d("AlarmManager", "알람 설정 시간: $alarmTime")
                 } else {
-                    Log.d("AlarmManager", "이미 지난 알람 시간: ${scheduleData.title}")
                 }
             } catch (e: SecurityException) {
-                Log.e("AlarmManager", "정확한 알람 설정 실패", e)
                 // 예외 처리, 사용자에게 알림 가능
             }
         } else {
@@ -263,6 +260,9 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             putInt("EXTRA_NOTIFICATION_TIME_${scheduleData.key}", scheduleData.notificationTime)
             apply()
         }
+
+        // 저장된 데이터 확인을 위한 로그
+        Log.d("setAlarm", "Alarm set for: ${scheduleData.title}, Notification Time: ${scheduleData.notificationTime}")
     }
 
 
@@ -301,8 +301,37 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         val alarmIntent = Intent(this, AlarmReceiver::class.java).let { intent ->
             PendingIntent.getBroadcast(this, scheduleData.key.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE)
         }
-        alarmManager.cancel(alarmIntent)
-        Log.d("AlarmManager", "Alarm canceled for schedule: ${scheduleData.title}")
+        // SharedPreferences에서 데이터 제거
+        val sharedPrefs = getSharedPreferences("AlarmPrefs", Context.MODE_PRIVATE)
+        with(sharedPrefs.edit()) {
+            remove("EXTRA_TITLE_${scheduleData.key}")
+            remove("EXTRA_NOTIFICATION_TIME_${scheduleData.key}")
+            apply()
+        }
+
+        // 제거된 데이터 확인을 위한 로그
+        Log.d("cancelAlarm", "Alarm canceled for: ${scheduleData.title}")
+    }
+
+    private fun registerPushToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+
+                if (token != null) {
+                    val uid = FirebaseAuth.getInstance().currentUser?.uid
+                    if (uid != null) {
+                        val database = FirebaseDatabase.getInstance()
+                        val ref = database.getReference("pushtokens").child(uid)
+
+                        // 푸시 토큰을 Firebase 실시간 데이터베이스에 저장
+                        ref.child("pushToken").setValue(token)
+                    }
+                }
+            } else {
+                // 푸시 토큰 가져오기 실패 시 처리
+            }
+        }
     }
 
 
@@ -334,10 +363,23 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
 
     // 드로어 내 아이템 클릭 이벤트 처리하는 함수
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        val currentUser = MyApplication.auth.currentUser
+        val uid = currentUser?.uid
         when(item.itemId){
             R.id.menu_logout-> {
                 MySharedPreferences.clearUser(this)
                 MyApplication.auth.signOut()
+                if (uid != null) {
+                    val database = FirebaseDatabase.getInstance()
+                    val ref = database.getReference("pushtokens").child(uid)
+
+                    // Firebase 실시간 데이터베이스에서 해당 사용자의 푸시 토큰 삭제
+                    ref.removeValue().addOnSuccessListener {
+                        // 성공적으로 삭제되었을 때의 처리
+                    }.addOnFailureListener {
+                        // 삭제 실패 시 처리
+                    }
+                }
 
                 val intent: Intent = Intent(this, LoginActivity::class.java)
                 startActivity(intent)
@@ -345,13 +387,24 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                 return true
             }
             R.id.menu_delete-> {
-                MySharedPreferences.clearUser(this)
+                    MySharedPreferences.clearUser(this)
 
                 val builder = AlertDialog.Builder(this)
                 builder.setTitle("경고")
                     .setMessage("정말 탈퇴하시겠습니까?")
                     .setPositiveButton("확인",
                         DialogInterface.OnClickListener { _, _ ->
+                            if (uid != null) {
+                                val database = FirebaseDatabase.getInstance()
+                                val tokenRef = database.getReference("pushtokens").child(uid)
+                                // 푸시 토큰 데이터 삭제
+                                tokenRef.removeValue().addOnSuccessListener {
+                                    // 푸시 토큰 데이터 삭제 성공 처리
+                                }.addOnFailureListener {
+                                    // 푸시 토큰 데이터 삭제 실패 처리
+                                }
+                            }
+
                             // 1. DB에 등록된 사용자 계정 삭제
                             myRef.child(MyApplication.email_revised.toString()).removeValue()
                             // 2. 탈퇴하려는 사용자가 최초 등록자인 일정 찾아서 삭제

@@ -1,24 +1,19 @@
 package com.example.sharedcalendar
 
-import android.app.Activity
 import android.app.DatePickerDialog
-import android.app.NotificationManager
 import android.app.TimePickerDialog
-import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View.OnClickListener
 import android.widget.Button
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
@@ -27,7 +22,11 @@ import com.example.sharedcalendar.databinding.ActivityAddEventBinding
 import com.github.dhaval2404.colorpicker.MaterialColorPickerDialog
 import com.github.dhaval2404.colorpicker.model.ColorShape
 import com.google.firebase.Firebase
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import www.sanju.motiontoast.MotionToast
 import www.sanju.motiontoast.MotionToastStyle
@@ -39,16 +38,6 @@ class AddEventActivity : AppCompatActivity() {
     private var database: DatabaseReference = Firebase.database.reference
     // private var myRef = database.database.getReference("schedules").child(MyApplication.email_revised.toString())
     private val myRef = database.database.getReference("schedules")
-
-    private val notificationOptionsWithVariables = mapOf(
-        "알림 없음" to 0,
-        "정시 알림" to 1,
-        "5분 전" to 5,
-        "10분 전" to 10,
-        "15분 전" to 15,
-        "1시간 전" to 60,
-        "test 10초 뒤" to 100
-    )
 
     // MainActivity로부터 넘겨 받은 년, 월, 일, 요일 정보 저장할 year, month, day, dayOfWeekString 멤버 변수 선언
     private var year = 0
@@ -104,6 +93,7 @@ class AddEventActivity : AppCompatActivity() {
         }
 
         val minutesBeforeTextView = findViewById<TextView>(R.id.minutesBeforeTextView)
+        minutesBeforeTextView.text = "알림 없음"
 
         // 일정을 추가하는 경우 schedule == null이고 수정하는 경우에는 해당 일정 정보가 들어감
         if (schedule == null) {
@@ -176,6 +166,7 @@ class AddEventActivity : AppCompatActivity() {
                                     MotionToast.LONG_DURATION,
                                     ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
                                 )
+                                sendBroadcastMessage("일정 알림","${schedule!!.title} 일정이 삭제 되었습니다.")
                                 val intent: Intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             })
@@ -453,6 +444,29 @@ class AddEventActivity : AppCompatActivity() {
         binding.endDateButton.text = String.format("%s월 %s일 (%s)", endMonth + 1, endDay, endDayOfWeekString)
     }
 
+    private fun sendBroadcastMessage(title: String, message: String) {
+        val database = FirebaseDatabase.getInstance()
+        val ref = database.getReference("pushtokens")
+
+        // 모든 사용자의 UID를 가져와서 알림을 보냅니다.
+        ref.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (childSnapshot in snapshot.children) {
+                    val uid = childSnapshot.key
+                    uid?.let {
+                        FcmPush.instance.sendMessage(uid, title, message)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // 에러 처리
+                Log.e("sendBroadcastMessage", "Database error: ${error.message}")
+            }
+        })
+        Log.d("sendBroadcastMessage", "Broadcast message sent: Title: $title, Message: $message")
+    }
+
     // 시간 선택 함수
     private fun showTimePickerDialogForButton(button: Button, hour: Int, minute: Int) {
         val timePickerDialog = TimePickerDialog(this, { _, selectedHour, selectedMinute ->
@@ -574,6 +588,7 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
+                                sendBroadcastMessage("일정 알림","${schedule!!.title} 일정이 추가 되었습니다.")
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
@@ -624,6 +639,7 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
+                                sendBroadcastMessage("일정 알림","${schedule!!.title} 일정이 수정 되었습니다.")
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
