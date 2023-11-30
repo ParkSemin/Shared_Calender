@@ -53,6 +53,12 @@
             android:name=".SearchActivity"
             android:screenOrientation="portrait"/>
         <receiver android:name=".AlarmReceiver" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_alarm"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorAccent"/>
     </application>
 
 </manifest>

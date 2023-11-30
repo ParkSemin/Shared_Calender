@@ -128,7 +128,6 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                             scheduleData?.let {
                                 // 읽어온 데이터를 리스트에 추가
                                 scheduleList.add(it)
-                                Log.d("seminLog", "$it")
                             }
                         }
                     }
@@ -332,6 +331,11 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                 // 푸시 토큰 가져오기 실패 시 처리
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        FcmPush.instance.sendMessage("Fcc6hQxKXTezbJiPh3OsMBQMLKw1","asd","asd")
     }
 
 
