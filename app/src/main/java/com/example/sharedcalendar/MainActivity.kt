@@ -120,6 +120,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         myScheduleRef.addValueEventListener(object: ValueEventListener {
             // DB 일정 데이터를 성공적으로 가져온 경우
             override fun onDataChange(dataSnapshot: DataSnapshot) {
+                syncDatabase() // 알림 설정
                 scheduleList.clear()
                 CoroutineScope(Dispatchers.IO).launch {
                     runBlocking {
@@ -144,7 +145,6 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                 Toast.makeText(applicationContext, "DB 데이터 읽기 실패", Toast.LENGTH_LONG).show()
             }
         })
-        syncDatabase() // 알림설정
 
         // 뒤로가기 콜백 추가
         this.onBackPressedDispatcher.addCallback(this, callback)
@@ -260,8 +260,6 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             apply()
         }
 
-        // 저장된 데이터 확인을 위한 로그
-        Log.d("setAlarm", "Alarm set for: ${scheduleData.title}, Notification Time: ${scheduleData.notificationTime}")
     }
 
 
@@ -288,11 +286,8 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
     }
 
     private fun updateAlarm(scheduleData: ScheduleData) {
-        Log.d("AlarmManager", "알림 Alarm set for: 호출호출")
         cancelAlarm(scheduleData) // 먼저 기존 알람을 취소
-        Log.d("AlarmManager", "알림 Alarm set for: 삭제삭제")
         setAlarm(scheduleData) // 그리고 새 알람을 설정
-        Log.d("AlarmManager", "알림 Alarm set for: 수정수정")
     }
 
     private fun cancelAlarm(scheduleData: ScheduleData) {
@@ -308,10 +303,16 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             apply()
         }
 
+        // existingAlarms 맵에서 해당 키 삭제
+        existingAlarms.remove(scheduleData.key)
         // 제거된 데이터 확인을 위한 로그
-        Log.d("cancelAlarm", "Alarm canceled for: ${scheduleData.title}")
     }
 
+
+    override fun onStop() {
+        super.onStop()
+        FcmPush.instance.sendMessage("Fcc6hQxKXTezbJiPh3OsMBQMLKw1","asd","asd")
+    }
     private fun registerPushToken() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -331,11 +332,6 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
                 // 푸시 토큰 가져오기 실패 시 처리
             }
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        FcmPush.instance.sendMessage("Fcc6hQxKXTezbJiPh3OsMBQMLKw1","asd","asd")
     }
 
 
