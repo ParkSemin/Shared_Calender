@@ -166,7 +166,7 @@ class AddEventActivity : AppCompatActivity() {
                                     MotionToast.LONG_DURATION,
                                     ResourcesCompat.getFont(this, www.sanju.motiontoast.R.font.helvetica_regular)
                                 )
-                                sendBroadcastMessage("일정 알림","${schedule!!.title} 일정이 삭제 되었습니다.")
+                                sendBroadcastMessage("일정 알림", "${binding.title.text} 일정이 삭제되었습니다.")
                                 val intent: Intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             })
@@ -445,8 +445,7 @@ class AddEventActivity : AppCompatActivity() {
     }
 
     private fun sendBroadcastMessage(title: String, message: String) {
-        val database = FirebaseDatabase.getInstance()
-        val ref = database.getReference("pushtokens")
+        val ref = database.database.getReference("pushtokens")
 
         // 모든 사용자의 UID를 가져와서 알림을 보냅니다.
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -466,6 +465,10 @@ class AddEventActivity : AppCompatActivity() {
         })
         Log.d("sendBroadcastMessage", "Broadcast message sent: Title: $title, Message: $message")
     }
+    //override fun onStop() {
+    //    super.onStop()
+    //    sendBroadcastMessage("qweqwe","qweqwe")
+    //}
 
     // 시간 선택 함수
     private fun showTimePickerDialogForButton(button: Button, hour: Int, minute: Int) {
@@ -588,7 +591,7 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
-                                sendBroadcastMessage("일정 알림","${schedule!!.title} 일정이 추가 되었습니다.")
+                                sendBroadcastMessage("일정 알림", "${binding.title.text} 일정이 추가되었습니다.")
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
@@ -639,7 +642,7 @@ class AddEventActivity : AppCompatActivity() {
                                         www.sanju.motiontoast.R.font.helvetica_regular
                                     )
                                 )
-                                sendBroadcastMessage("일정 알림","${schedule!!.title} 일정이 수정 되었습니다.")
+                                sendBroadcastMessage("일정 알림", "${binding.title.text} 일정이 수정되었습니다.")
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
                             }
