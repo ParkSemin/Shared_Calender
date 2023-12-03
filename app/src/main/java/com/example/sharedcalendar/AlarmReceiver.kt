@@ -65,7 +65,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val vibrationPattern = longArrayOf(2000) // 2초 진동
 
         val notificationBuilder = NotificationCompat.Builder(context, "ALARM_CHANNEL_ID")
-            .setSmallIcon(R.drawable.ic_alarm) // 알림 아이콘 설정
+            .setSmallIcon(R.drawable.ic_launcher) // 알림 아이콘 설정
             .setContentTitle(title) // 알림 제목
             .setContentText(message) // 알림 내용
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)

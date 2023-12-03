@@ -116,35 +116,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         snap.attachToRecyclerView(binding.calendarCustom)
         binding.showDiaryView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
 
-        // AddEventActivity에서 일정 추가하고 다시 돌아오면 변경 사항을 반영해야 함
-        myScheduleRef.addValueEventListener(object: ValueEventListener {
-            // DB 일정 데이터를 성공적으로 가져온 경우
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                syncDatabase() // 알림 설정
-                scheduleList.clear()
-                CoroutineScope(Dispatchers.IO).launch {
-                    runBlocking {
-                        for(snapshot in dataSnapshot.children) {
-                            val scheduleData = snapshot.getValue(ScheduleData::class.java)
-                            scheduleData?.let {
-                                // 읽어온 데이터를 리스트에 추가
-                                scheduleList.add(it)
-                            }
-                        }
-                    }
-                }
-                binding.calendarCustom.apply {
-                    layoutManager = monthListManager
-                    adapter = monthListAdapter
-                    scrollToPosition(Int.MAX_VALUE/2 + (selectedDate[Calendar.YEAR] - today[Calendar.YEAR]) * 12 + (selectedDate[Calendar.MONTH] - today[Calendar.MONTH]))
-                }
-            }
-
-            // DB 일정 데이터를 가져오지 못한 경우
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(applicationContext, "DB 데이터 읽기 실패", Toast.LENGTH_LONG).show()
-            }
-        })
+        syncDatabase() // 알림 설정, 일정 리스트
 
         // 뒤로가기 콜백 추가
         this.onBackPressedDispatcher.addCallback(this, callback)
@@ -184,36 +156,68 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // 처음에 전체 데이터를 불러오는 ValueEventListener
+        myScheduleRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                scheduleList.clear()
+                for(snapshot in dataSnapshot.children) {
+                    val scheduleData = snapshot.getValue(ScheduleData::class.java)
+                    scheduleData?.let {
+                        scheduleList.add(it)
+                        existingAlarms[it.key] = it
+                    }
+                }
+                updateCalendarUI()
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // 오류 처리
+            }
+        })
+    }
+
     private fun syncDatabase() {
+        // 이후의 변경을 추적하는 ChildEventListener
         myScheduleRef.addChildEventListener(object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                dataSnapshot.getValue(ScheduleData::class.java)?.let {
-                    setAlarm(it)
-                    // 새로운 알람을 existingAlarms 맵에 추가
-                    existingAlarms[it.key] = it
+                val newSchedule = dataSnapshot.getValue(ScheduleData::class.java)
+                newSchedule?.let {
+                    if (!scheduleList.any { schedule -> schedule.key == it.key }) {
+                        scheduleList.add(it)
+                        setAlarm(it)
+                        existingAlarms[it.key] = it
+                    }
                 }
+                updateCalendarUI()
             }
 
             override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                dataSnapshot.getValue(ScheduleData::class.java)?.let {
-                    updateAlarm(it)
-                    // 기존 알람 정보를 existingAlarms 맵에서 업데이트
-                    existingAlarms[it.key] = it
+                val updatedSchedule = dataSnapshot.getValue(ScheduleData::class.java)
+                updatedSchedule?.let { updatedItem ->
+                    // 기존 리스트에서 해당 항목을 찾아 업데이트합니다.
+                    val index = scheduleList.indexOfFirst { it.key == updatedItem.key }
+                    if (index >= 0) {
+                        scheduleList[index] = updatedItem
+                        updateAlarm(updatedItem)
+                    } else {
+                        // 리스트에 항목이 없는 경우, 새로 추가합니다.
+                        scheduleList.add(updatedItem)
+                        setAlarm(updatedItem)
+                    }
+                    existingAlarms[updatedItem.key] = updatedItem
                 }
+                updateCalendarUI()
             }
-
             override fun onChildRemoved(dataSnapshot: DataSnapshot) {
-                dataSnapshot.getValue(ScheduleData::class.java)?.let { scheduleData ->
-                    cancelAlarm(scheduleData)
-                    // 알람 취소 후 existingAlarms 맵에서 해당 키 삭제
-                    existingAlarms.remove(scheduleData.key)
-
-                    // SharedPreferences에서 관련 데이터 삭제
-                    val editor = getSharedPreferences("AlarmPrefs", Context.MODE_PRIVATE).edit()
-                    editor.remove("EXTRA_TITLE_${scheduleData.key}")
-                    editor.remove("EXTRA_NOTIFICATION_TIME_${scheduleData.key}")
-                    editor.apply()
+                val removedSchedule = dataSnapshot.getValue(ScheduleData::class.java)
+                removedSchedule?.let {
+                    scheduleList.removeAll { it.key == removedSchedule.key }
+                    cancelAlarm(removedSchedule)
+                    existingAlarms.remove(removedSchedule.key)
                 }
+                updateCalendarUI()
             }
 
             override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
@@ -225,6 +229,18 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             }
         })
     }
+
+    private fun updateCalendarUI() {
+        val monthListManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        val monthListAdapter = AdapterMonth(binding)
+        binding.calendarCustom.apply {
+            layoutManager = monthListManager
+            adapter = monthListAdapter
+            scrollToPosition(Int.MAX_VALUE/2 + (selectedDate[Calendar.YEAR] - today[Calendar.YEAR]) * 12 + (selectedDate[Calendar.MONTH] - today[Calendar.MONTH]))
+        }
+    }
+
+
 
 
     @SuppressLint("UnspecifiedImmutableFlag")
@@ -242,6 +258,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             try {
                 if (System.currentTimeMillis() < alarmTime) {
                     alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent)
+                    Log.d("parktest","setalarm")
                 } else {
                 }
             } catch (e: SecurityException) {
@@ -292,9 +309,17 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
 
     private fun cancelAlarm(scheduleData: ScheduleData) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val alarmIntent = Intent(this, AlarmReceiver::class.java).let { intent ->
-            PendingIntent.getBroadcast(this, scheduleData.key.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE)
+        val alarmIntent = Intent(this, AlarmReceiver::class.java).apply {
+            putExtra("ALARM_ID", scheduleData.key)
         }
+        val requestCode = scheduleData.key.hashCode()
+        val pendingIntent = PendingIntent.getBroadcast(this, requestCode, alarmIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+        // 알람 취소
+        alarmManager.cancel(pendingIntent)
+        Log.d("parktest","deletalarm")
+
+
         // SharedPreferences에서 데이터 제거
         val sharedPrefs = getSharedPreferences("AlarmPrefs", Context.MODE_PRIVATE)
         with(sharedPrefs.edit()) {
