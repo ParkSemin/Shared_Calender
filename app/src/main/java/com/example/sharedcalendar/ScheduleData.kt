@@ -15,4 +15,13 @@ data class ScheduleData(
     val end_time: String = "",
     val color: Int = 0,
     val notificationTime: Int = 0
-) : Serializable
+) : Serializable {
+    // 데이터 변경 확인 메서드
+    fun isDataChanged(other: ScheduleData): Boolean {
+        return this.start_date != other.start_date ||
+                this.start_time != other.start_time ||
+                this.end_date != other.end_date ||
+                this.end_time != other.end_time ||
+                this.notificationTime != other.notificationTime
+    }
+}

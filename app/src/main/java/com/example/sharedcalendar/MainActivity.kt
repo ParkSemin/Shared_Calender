@@ -196,11 +196,15 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
                 val updatedSchedule = dataSnapshot.getValue(ScheduleData::class.java)
                 updatedSchedule?.let { updatedItem ->
-                    // 기존 리스트에서 해당 항목을 찾아 업데이트합니다.
                     val index = scheduleList.indexOfFirst { it.key == updatedItem.key }
                     if (index >= 0) {
-                        scheduleList[index] = updatedItem
-                        updateAlarm(updatedItem)
+                        val oldItem = scheduleList[index]
+
+                        // 중요한 데이터가 변경되었는지 확인
+                        if (oldItem.isDataChanged(updatedItem)) {
+                            scheduleList[index] = updatedItem
+                            updateAlarm(updatedItem)
+                        }
                     } else {
                         // 리스트에 항목이 없는 경우, 새로 추가합니다.
                         scheduleList.add(updatedItem)
@@ -229,6 +233,7 @@ class MainActivity : AppCompatActivity() , NavigationView.OnNavigationItemSelect
             }
         })
     }
+
 
     private fun updateCalendarUI() {
         val monthListManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)

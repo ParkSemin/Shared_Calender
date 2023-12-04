@@ -1,10 +1,10 @@
 # ---변경 사항 정리---  
-* 날짜 : 2023-11-29
-* 일시 : 21:55
-* 비고 : 이 버전은 'semin_11_28'를 기준으로 수정되었음
+* 날짜 : 2023-12-04
+* 일시 : 01:55
+* 비고 : 이 버전은 'doncici_12.4_end'를 기준으로 수정되었음
   
-1. FcmPush.kt 코드 추가 (fcm을 이용해서 앱을 깔고 앱 화면이 켜저있지 않은 기기들에게 알림이 감 = 백그라운드 상태일때만 알림 감)
-2. PushDTO.kt 코드 추가 위의 내용을 저장
-3. AddEventActivity.kt 에서 일정 변경내용을 fcm으로 보내는 것에 대한 코드 추가
-4. 메인엑티비티.kt에 fcm 토큰을 실시간데이터 베이스에 저장 코드 추가
-6. 일정 업데이트 아이콘은 런처 아이콘 사용, 일정 알람시간의 알림은 알람 아이콘으로 변경
+1. onChildChanged 리스너가 ScheduleData 객체의 어떠한 변경에도 updateAlarm 함수를 중복 호출 문제 확인
+2. ScheduleData 클래스에 isDataChanged라는 새로운 메서드를 추가 -> 알림 설정에 중요한 필드(start_date, start_time, end_date, end_time, notificationTime)가 변경되었는지 확인
+3. onChildChanged 리스너에서, 변경된 ScheduleData 객체와 기존 객체를 isDataChanged 메서드를 사용하여 비교 -> 중요한 필드에 실제 변경이 있었을 때만 updateAlarm을 호출
+4. 로그 확인 결과 중복 호출 사라짐
+5. 알림 설정에 30분전, 2시간전 추가

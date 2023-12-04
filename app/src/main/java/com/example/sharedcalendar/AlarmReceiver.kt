@@ -26,6 +26,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         // 알림 메시지 설정
         val message = when (notificationTime) {
+            120 -> "일정: ${title}의 시작 2시간 전"
             60 -> "일정: ${title}의 시작 1시간 전"
             2 -> "일정: ${title}의 시작"
             else -> "일정: ${title} 시작 ${notificationTime}분 전"

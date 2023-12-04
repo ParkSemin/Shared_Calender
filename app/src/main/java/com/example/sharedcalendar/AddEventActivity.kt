@@ -252,6 +252,7 @@ class AddEventActivity : AppCompatActivity() {
                 0 -> "알림 없음"
                 2 -> "정시 알림"
                 60 -> "알림 1시간 전"
+                120 -> "알림 2시간 전"
                 else -> "알림 ${minutesBefore}분 전"
             }
         }
@@ -334,7 +335,9 @@ class AddEventActivity : AppCompatActivity() {
                 "5분 전",
                 "10분 전",
                 "15분 전",
-                "1시간 전"
+                "30분 전",
+                "1시간 전",
+                "2시간 전"
             )
 
             val notificationOptionsWithVariables = mapOf(
@@ -343,7 +346,9 @@ class AddEventActivity : AppCompatActivity() {
                 "5분 전" to 5,
                 "10분 전" to 10,
                 "15분 전" to 15,
-                "1시간 전" to 60
+                "30분 전" to 30,
+                "1시간 전" to 60,
+                "2시간 전" to 120,
             )
 
             builder.setItems(options) { _, which ->
@@ -355,6 +360,7 @@ class AddEventActivity : AppCompatActivity() {
                     0 -> "알림 없음"
                     2 -> "정시 알림"
                     60 -> "알림 1시간 전"
+                    120 -> "알림 2시간 전"
                     else -> "알림 ${minutesBefore}분 전"
                 }
             }
